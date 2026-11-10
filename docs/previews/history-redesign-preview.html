@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="google" content="notranslate" />
+<title>历史改版预览 · 清醒时光</title>
+<style>
+  :root {
+    --bg: #0e1014;
+    --card: #171b22;
+    --card-2: #1e242d;
+    --text: #eef1f6;
+    --muted: #8b94a5;
+    --accent: #4c8dff;
+    --accent-2: #7bd0ff;
+    --line: #262d38;
+    --warn: #ffb02e;
+    --late: #ff8066;
+    --early: #3ddc97;
+    --ok: #3ddc97;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; min-height: 100%; overflow-x: hidden; }
+  body {
+    background: radial-gradient(1200px 800px at 70% -10%, #101827 0%, #07090c 55%);
+    color: var(--text);
+    font-family: -apple-system, 'MiSans', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .mono { font-variant-numeric: tabular-nums; }
+  .stage {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 34px;
+    padding: 20px;
+  }
+  .app-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(390px, 100vw);
+    height: min(844px, calc(100dvh - 40px));
+    background: var(--bg);
+    border: 1px solid #242b36;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+    flex: none;
+  }
+  .app-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: calc(16px + env(safe-area-inset-top)) 18px 10px;
+    flex: none;
+  }
+  .app-header h1 { font-size: 23px; margin: 0; letter-spacing: 0.4px; }
+  .app-header .subtitle { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+  .preview-badge {
+    flex: none;
+    font-size: 10.5px;
+    color: var(--accent-2);
+    border: 1px solid rgba(123, 208, 255, 0.28);
+    background: rgba(76, 141, 255, 0.08);
+    border-radius: 999px;
+    padding: 4px 9px;
+    margin-top: 3px;
+    letter-spacing: 0.02em;
+  }
+  .segmented {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin: 0 14px 8px;
+    padding: 4px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    flex: none;
+  }
+  .segmented button {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    min-height: 38px;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .segmented button[aria-selected='true'] {
+    color: var(--text);
+    background: linear-gradient(180deg, #24344d, #1d2838);
+    box-shadow: inset 0 0 0 1px rgba(123, 208, 255, 0.18);
+  }
+  .pager { flex: 1; min-height: 0; overflow: clip; position: relative; }
+  .track {
+    display: flex;
+    width: 200%;
+    height: 100%;
+    transition: transform 0.28s cubic-bezier(0.22, 0.72, 0.26, 1);
+  }
+  .panel {
+    width: 50%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px 14px calc(88px + env(safe-area-inset-bottom));
+    overscroll-behavior-y: contain;
+    scrollbar-width: none;
+  }
+  .panel::-webkit-scrollbar { display: none; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .card-title { font-size: 13.5px; font-weight: 600; }
+  .small { font-size: 11px; color: var(--muted); }
+  .tiny { font-size: 10.5px; line-height: 1.65; color: var(--muted); }
+  .hint { font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+  .segmented + .swipe-tip {
+    text-align: center;
+    font-size: 10px;
+    color: #6f7888;
+    margin: -2px 0 4px;
+    flex: none;
+  }
+  .rail-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 2px 7px;
+  }
+  .rail-head span:first-child { font-size: 12px; font-weight: 600; }
+  .week-rail {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    padding: 2px 14px 10px;
+    margin: 0 -14px;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+  .week-rail::-webkit-scrollbar { display: none; }
+  .week-item {
+    flex: none;
+    scroll-snap-align: center;
+    min-width: 112px;
+    text-align: left;
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 13px;
+    padding: 9px 11px;
+    color: var(--muted);
+    min-height: 52px;
+  }
+  .week-item b { display: block; font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: 0.01em; }
+  .week-item span { display: block; font-size: 10.5px; margin-top: 3px; }
+  .week-item[aria-current='true'] {
+    border-color: rgba(76, 141, 255, 0.65);
+    background: linear-gradient(160deg, rgba(76, 141, 255, 0.16), rgba(23, 27, 34, 0.9));
+    color: var(--accent-2);
+  }
+  .hero {
+    background: linear-gradient(155deg, #162232 0%, #171b22 62%);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 15px 16px 14px;
+    margin-bottom: 12px;
+  }
+  .hero-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  .hero-kicker { font-size: 11px; color: var(--muted); letter-spacing: 0.02em; }
+  .hero-number { font-size: 37px; font-weight: 650; line-height: 1.05; margin-top: 4px; letter-spacing: -0.5px; }
+  .hero-number small { font-size: 15px; font-weight: 500; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+  .hero-side { text-align: right; font-size: 11px; color: var(--muted); line-height: 1.8; padding-bottom: 3px; }
+  .hero-side b { color: var(--text); font-size: 12.5px; font-weight: 600; margin-left: 5px; }
+  .hero-divider { height: 1px; background: var(--line); margin: 13px 0 11px; }
+  .range-line { display: flex; align-items: center; gap: 9px; margin: 3px 0 5px; }
+  .range-track { flex: 1; height: 3px; border-radius: 999px; background: linear-gradient(90deg, rgba(61, 220, 151, 0.55), rgba(123, 208, 255, 0.75), rgba(255, 128, 102, 0.65)); position: relative; }
+  .range-track::before, .range-track::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    transform: translateY(-50%);
+    background: var(--text);
+    box-shadow: 0 0 0 2px var(--card);
+  }
+  .range-track::before { left: 0; }
+  .range-track::after { right: 0; }
+  .range-labels { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); margin-top: 6px; }
+  .range-labels b { color: var(--text); font-weight: 600; }
+  .metric-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .metric-pill { background: rgba(14, 16, 20, 0.34); border: 1px solid rgba(38, 45, 56, 0.8); border-radius: 11px; padding: 8px 10px; }
+  .metric-pill span { display: block; font-size: 10.5px; color: var(--muted); }
+  .metric-pill b { display: block; font-size: 13px; margin-top: 2px; font-weight: 600; }
+  .chart-wrap { margin-top: 4px; }
+  .chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart-note { margin-top: 6px; font-size: 10.5px; color: var(--muted); line-height: 1.6; }
+  .insight { border-left: 2px solid rgba(123, 208, 255, 0.55); }
+  .insight p { margin: 0; font-size: 12.5px; line-height: 1.75; color: var(--text); }
+  .insight p + p { margin-top: 5px; color: var(--muted); font-size: 11.5px; }
+  details.research {
+    margin-top: 10px;
+    border-top: 1px solid var(--line);
+    padding-top: 8px;
+  }
+  details.research summary {
+    cursor: pointer;
+    color: var(--accent-2);
+    font-size: 11.5px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+  }
+  details.research p { font-size: 11px; line-height: 1.7; color: var(--muted); margin: 6px 0; }
+  details.research a { color: var(--accent-2); text-decoration: none; border-bottom: 1px dotted rgba(123, 208, 255, 0.5); }
+  .month-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .month-title { font-size: 13px; font-weight: 600; }
+  .month-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    color: var(--text);
+    min-height: 38px;
+  }
+  .month-pill .chev { color: var(--muted); font-size: 10px; }
+  .month-summary { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+  .month-summary b { color: var(--text); font-weight: 600; }
+  .calendar { width: 100%; }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+  .cal-weekdays span { text-align: center; font-size: 10px; color: var(--muted); padding: 2px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-cell {
+    position: relative;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 10px;
+    min-height: 50px;
+    padding: 5px 2px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1px;
+    color: var(--muted);
+    touch-action: manipulation;
+  }
+  .cal-cell:not(.empty):hover { background: var(--card-2); }
+  .cal-cell.empty { pointer-events: none; }
+  .cal-cell .d { font-size: 11.5px; line-height: 1.3; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .cal-cell.has { background: rgba(30, 36, 45, 0.72); border-color: rgba(38, 45, 56, 0.9); color: var(--text); }
+  .cal-cell.has .d { color: var(--text); }
+  .cal-cell .sleep { font-size: 9.5px; color: var(--accent-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cal-cell .drift { font-size: 8.5px; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cal-cell .drift.late { color: var(--late); }
+  .cal-cell .drift.early { color: var(--early); }
+  .cal-cell .drift.none { color: #5c6575; }
+  .cal-cell.today .d { color: var(--accent-2); }
+  .cal-cell.today::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--accent-2);
+  }
+  .cal-cell.selected { background: rgba(76, 141, 255, 0.16); border-color: var(--accent); box-shadow: inset 0 0 0 1px rgba(76, 141, 255, 0.35); }
+  .cal-cell.future { opacity: 0.4; }
+  .cal-cell.future .sleep { color: #56606f; }
+  .cal-cell.selected::after { display: none; }
+  .cal-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; font-size: 10px; color: var(--muted); }
+  .cal-legend i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 4px; vertical-align: 1px; }
+  .day-card { margin-top: 12px; }
+  .day-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .day-date { font-size: 15px; font-weight: 600; }
+  .day-sub { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+  .drift-pill { flex: none; font-size: 11px; border-radius: 999px; padding: 4px 9px; border: 1px solid rgba(255, 128, 102, 0.35); background: rgba(255, 128, 102, 0.1); color: #ffab97; font-variant-numeric: tabular-nums; }
+  .drift-pill.early { border-color: rgba(61, 220, 151, 0.32); background: rgba(61, 220, 151, 0.08); color: #7fe3ba; }
+  .drift-pill.none { border-color: var(--line); background: transparent; color: var(--muted); }
+  .day-times { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .day-times b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cat-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .cat-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--muted); background: var(--card-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px; }
+  .cat-chip i { width: 5px; height: 5px; border-radius: 50%; }
+  .cat-chip b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .timeline { display: flex; flex-direction: column; }
+  .tl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .tl-row:first-child { border-top: 0; }
+  .tl-left { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  .tl-time { font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tl-cat { font-size: 11px; white-space: nowrap; }
+  .tl-note { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tl-dur { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .empty-day { padding: 16px 0 6px; text-align: center; color: var(--muted); font-size: 12px; }
+  .tabbar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    background: rgba(14, 16, 20, 0.94);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(14px);
+  }
+  .tab { border: 0; background: transparent; color: var(--muted); font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 3px 0 0; min-height: 44px; }
+  .tab .ico { font-size: 16px; line-height: 1; }
+  .tab.active { color: var(--accent-2); }
+  .sheet-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 6, 9, 0.62);
+    display: none;
+    align-items: flex-end;
+    z-index: 20;
+  }
+  .sheet-mask.open { display: flex; }
+  .sheet {
+    width: 100%;
+    background: var(--card);
+    border-top: 1px solid var(--line);
+    border-radius: 22px 22px 0 0;
+    padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+  }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .sheet-title { font-size: 15px; font-weight: 600; }
+  .icon-btn { border: 1px solid var(--line); background: var(--card-2); color: var(--text); border-radius: 10px; width: 36px; height: 36px; display: grid; place-items: center; font-size: 16px; }
+  .year-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .year-row b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .month-grid button { border: 1px solid var(--line); background: var(--card-2); border-radius: 12px; min-height: 44px; font-size: 12.5px; color: var(--text); }
+  .month-grid button[aria-current='true'] { border-color: var(--accent); background: rgba(76, 141, 255, 0.16); color: var(--accent-2); }
+  .month-grid button:disabled { color: #4a5261; }
+  .month-grid button.has-data { position: relative; }
+  .month-grid button.has-data i { position: absolute; left: 50%; bottom: 4px; width: 3px; height: 3px; margin-left: -1.5px; border-radius: 50%; background: var(--accent-2); opacity: 0.75; }
+  .preview-note {
+    width: 220px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.75;
+    flex: none;
+  }
+  .preview-note b { color: var(--text); display: block; font-size: 13px; margin-bottom: 6px; }
+  .preview-note .tip { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .preview-note kbd { font-family: inherit; color: var(--accent-2); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  @media (max-width: 900px) { .preview-note { display: none; } }
+  @media (max-width: 640px) {
+    .stage { padding: 0; display: block; }
+    .app-shell { width: 100%; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .track, .segmented button, .cal-cell { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <aside class="preview-note" aria-hidden="true">
+    <b>历史改版预览</b>
+    这个文件是可交互的静态预览，使用演示数据，不会读写 App 的真实记录。
+    <div class="tip">
+      <kbd>左右滑动</kbd> 内容：切换「周趋势 / 每日明细」<br />
+      <kbd>左右滑动</kbd> 周条：切换周<br />
+      <kbd>点月份</kbd>：选择年月并查看当月每天
+    </div>
+  </aside>
+
+  <div class="app-shell" id="app">
+    <header class="app-header">
+      <div>
+        <h1>清醒时光</h1>
+        <p class="subtitle">11月8日 星期日 · 设计预览 · 演示数据</p>
+      </div>
+      <span class="preview-badge">预览版</span>
+    </header>
+
+    <div class="segmented" role="tablist" aria-label="历史视图切换">
+      <button id="tab-week" role="tab" aria-selected="true" aria-controls="panel-week" tabindex="0">周趋势</button>
+      <button id="tab-days" role="tab" aria-selected="false" aria-controls="panel-days" tabindex="-1">每日明细</button>
+    </div>
+    <p class="swipe-tip" aria-hidden="true">左右滑动切换面板</p>
+
+    <div class="pager" id="pager">
+      <div class="track" id="track">
+        <section class="panel" id="panel-week" role="tabpanel" aria-labelledby="tab-week">
+          <div class="rail-head"><span>按周查看</span><span class="small">左右滑动周条切换</span></div>
+          <div class="week-rail no-swipe" id="week-rail" aria-label="选择周"></div>
+          <div id="week-view"></div>
+        </section>
+        <section class="panel" id="panel-days" role="tabpanel" aria-labelledby="tab-days">
+          <div class="month-bar">
+            <div>
+              <div class="month-title">每日明细</div>
+              <div class="small">按月查看每天，点日期看当天时间轴</div>
+            </div>
+            <button class="month-pill" id="month-pill" aria-haspopup="dialog" aria-controls="month-sheet">
+              <span id="month-label">2026年11月</span><span class="chev">▼</span>
+            </button>
+          </div>
+          <div id="month-view"></div>
+        </section>
+      </div>
+    </div>
+
+    <nav class="tabbar" aria-label="主导航">
+      <button class="tab"><span class="ico">◷</span>今日</button>
+      <button class="tab active" aria-current="page"><span class="ico">▤</span>历史</button>
+      <button class="tab"><span class="ico">⇪</span>导出</button>
+      <button class="tab"><span class="ico">⚙</span>设置</button>
+    </nav>
+
+    <div class="sheet-mask" id="month-sheet" role="dialog" aria-modal="true" aria-label="选择年月">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div class="sheet-title">选择年月</div>
+          <button class="icon-btn" id="sheet-close" aria-label="关闭">×</button>
+        </div>
+        <div class="year-row">
+          <button class="icon-btn" id="year-prev" aria-label="上一年">‹</button>
+          <b id="sheet-year">2026</b>
+          <button class="icon-btn" id="year-next" aria-label="下一年">›</button>
+        </div>
+        <div class="month-grid" id="month-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const DEMO_NOW = new Date(2026, 10, 8); // 演示的“今天”
+  const DATA_START = new Date(2026, 8, 1);
+  const DAY = 86400000;
+  const pad = (n) => String(n).padStart(2, '0');
+  const dateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const parseKey = (key) => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const mondayOf = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+  const hash = (text) => {
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0) / 4294967296;
+  };
+  const fmtClock = (minutes) => { const m = ((Math.round(minutes) % 1440) + 1440) % 1440; return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; };  const fmtDur = (minutes) => {
+    const total = Math.max(0, Math.round(minutes));
+    const h = Math.floor(total / 60), m = total % 60;
+    return m ? `${h}h${pad(m)}m` : `${h}h`;
+  };
+  const fmtShortDur = (minutes) => {
+    const total = Math.max(0, Math.round(minutes));
+    const h = Math.floor(total / 60), m = total % 60;
+    if (!h) return `${m}m`;
+    return m ? `${h}h${m}` : `${h}h`;
+  };
+  const fmtSigned = (minutes) => {
+    if (minutes === null || minutes === undefined) return '—';
+    const v = Math.round(minutes);
+    if (v === 0) return '0m';
+    const sign = v > 0 ? '+' : '−';
+    const abs = Math.abs(v), h = Math.floor(abs / 60), m = abs % 60;
+    return `${sign}${h ? `${h}h${m ? pad(m) : ''}` : `${m}m`}`;
+  };
+  const hourLabel = (minutes) => `${Math.floor(Math.round(minutes) / 60)}h${pad(Math.round(minutes) % 60)}`;
+
+  const WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
+  const MONTH_NAMES = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  const CATS = {
+    work: { name: '工作', color: '#4c8dff' },
+    daily: { name: '日常', color: '#3ddc97' },
+    unclassified: { name: '未分类', color: '#8b94a5' },
+    sleep: { name: '补觉', color: '#ffb02e' },
+  };
+  const WORK_NOTES = ['写方案', '看资料', '改代码', '开会', '整理文档', '处理邮件'];
+  const DAILY_NOTES = ['吃饭', '散步', '做饭', '收拾房间', '洗澡', '买东西'];
+  const IDLE_NOTES = ['刷手机', '发呆', '听播客', ''];
+
+  /* ---------- 演示数据 ---------- */
+  const SKIPS = new Set([
+    '2026-09-14', '2026-09-27', '2026-10-12', '2026-10-18',
+    '2026-10-21', '2026-10-27', '2026-11-04', '2026-08-31',
+  ]);
+  const cycles = new Map();
+
+  function buildSegments(key, wakeMin, durationMin) {
+    const awake = Math.max(240, 1440 - durationMin);
+    const pattern = [
+      ['daily', 0.07, '起床洗漱'],
+      ['work', 0.28, 'work'],
+      ['daily', 0.10, 'meal'],
+      ['work', 0.22, 'work'],
+      ['unclassified', 0.11, 'idle'],
+      ['daily', 0.13, 'daily'],
+      ['unclassified', 0.09, 'idle'],
+    ];
+    let cursor = wakeMin;
+    return pattern.map(([cat, weight, kind], index) => {
+      const duration = Math.round(awake * weight);
+      const start = cursor;
+      cursor += duration;
+      const note = kind === 'work' ? WORK_NOTES[Math.floor(hash(key + 'w' + index) * WORK_NOTES.length)]
+        : kind === 'daily' ? DAILY_NOTES[Math.floor(hash(key + 'd' + index) * DAILY_NOTES.length)]
+        : kind === 'meal' ? '吃饭'
+        : kind === 'idle' ? IDLE_NOTES[Math.floor(hash(key + 'i' + index) * IDLE_NOTES.length)]
+        : kind;
+      return { cat, startAt: start, endAt: start + duration, note };
+    });
+  }
+
+  for (let d = new Date(DATA_START); d <= DEMO_NOW; d = addDays(d, 1)) {
+    const key = dateKey(d);
+    if (SKIPS.has(key)) continue;
+    const wd = d.getDay();
+    const baseBed = [135, 120, 130, 140, 125, 175, 205][wd]; // 日→六
+    let sleepMin = Math.round(clamp(
+      baseBed + (hash(key + 's') - 0.5) * 44 + (hash(key + 'late') > 0.87 ? 34 : 0),
+      55, 320
+    ));
+    let durMin = Math.round(clamp(
+      474 + ((wd === 0 || wd === 6) ? 28 : 0) + (hash(key + 'd') - 0.5) * 72,
+      392, 600
+    ));
+    if (key >= '2026-10-19' && key <= '2026-10-25') durMin -= 34; // 一个偏累的周
+    if (key >= '2026-10-26' && key <= '2026-11-01') { sleepMin += 12; }
+    const napMin = hash(key + 'n') > 0.82 ? Math.round(20 + hash(key + 'nn') * 40) : 0;
+    const wakeMin = sleepMin + durMin;
+    const segments = buildSegments(key, wakeMin, durMin);
+    const catTotals = {};
+    for (const s of segments) catTotals[s.cat] = (catTotals[s.cat] || 0) + (s.endAt - s.startAt);
+    cycles.set(key, {
+      key, date: new Date(d), weekday: wd,
+      sleepMin, wakeMin, durMin, napMin,
+      totalMin: durMin + napMin,
+      segments, catTotals,
+      drift: null,
+    });
+  }
+
+  // drift：只与“恰好下一天”的记录比较；缺失一天就不跨日硬算，避免把 48 小时差当波动。
+  const cycleList = [...cycles.values()].sort((a, b) => a.date - b.date);
+  for (const c of cycleList) {
+    const next = cycles.get(dateKey(addDays(c.date, 1)));
+    c.drift = next ? next.sleepMin - c.sleepMin : null;
+  }
+
+  const weeks = (() => {
+    const starts = new Set();
+    for (const c of cycleList) starts.add(dateKey(mondayOf(c.date)));
+    return [...starts].sort().map((key) => {
+      const start = parseKey(key);
+      const days = Array.from({ length: 7 }, (_, i) => {
+        const date = addDays(start, i);
+        return { date, key: dateKey(date), cycle: cycles.get(dateKey(date)) || null };
+      });
+      return { key, start, days };
+    });
+  })();
+
+  const state = {
+    panel: 0,
+    weekIndex: weeks.length - 1,
+    month: { year: 2026, month: 10 },
+    selectedKey: '2026-11-08',
+    sheetYear: 2026,
+    sheetOpen: false,
+  };
+
+  /* ---------- 聚合 ---------- */
+  const mean = (values) => values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+  const recorded = (days) => days.filter((d) => d.cycle);
+
+  function weekMetrics(week) {
+    const list = recorded(week.days).map((d) => d.cycle);
+    if (!list.length) return null;
+    const avgSleep = mean(list.map((c) => c.totalMin));
+    const avgBed = mean(list.map((c) => c.sleepMin));
+    const avgWake = mean(list.map((c) => c.wakeMin));
+    const minBed = Math.min(...list.map((c) => c.sleepMin));
+    const maxBed = Math.max(...list.map((c) => c.sleepMin));
+    const driftList = list.filter((c) => c.drift !== null);
+    const absDrift = driftList.map((c) => Math.abs(c.drift));
+    const avgAbsDrift = absDrift.length ? mean(absDrift) : null;
+    let maxAbs = null, maxDay = null;
+    for (const c of driftList) {
+      if (maxAbs === null || Math.abs(c.drift) > maxAbs) { maxAbs = Math.abs(c.drift); maxDay = c; }
+    }
+    return { list, avgSleep, avgBed, avgWake, minBed, maxBed, spread: maxBed - minBed,
+      avgAbsDrift, maxAbs, maxDay, driftValues: driftList.map((c) => c.drift) };
+  }
+
+  function monthsWithData() {
+    const set = new Set();
+    for (const c of cycleList) set.add(`${c.date.getFullYear()}-${c.date.getMonth()}`);
+    return set;
+  }
+
+  /* ---------- 渲染：周 ---------- */
+  const rail = document.getElementById('week-rail');
+  const weekView = document.getElementById('week-view');
+  const monthView = document.getElementById('month-view');
+  const monthLabel = document.getElementById('month-label');
+  const track = document.getElementById('track');
+
+  function centerRail(el) {
+    if (!el) return;
+    const railBox = rail.getBoundingClientRect();
+    const elBox = el.getBoundingClientRect();
+    rail.scrollLeft += (elBox.left - railBox.left) - (rail.clientWidth - el.clientWidth) / 2;
+  }
+
+  function renderRail() {
+    rail.innerHTML = weeks.map((w, i) => {
+      const m = weekMetrics(w);
+      const active = i === state.weekIndex;
+      return `<button class="week-item" data-index="${i}" aria-current="${active}" aria-label="第 ${i + 1} 周，${monthDay(w.start)} 至 ${monthDay(addDays(w.start, 6))}">
+        <b>${monthDay(w.start)} – ${monthDay(addDays(w.start, 6))}</b>
+        <span>${m ? `均睡 ${fmtDur(m.avgSleep)}` : '无记录'}</span>
+      </button>`;
+    }).join('');
+    const active = rail.querySelector('[aria-current="true"]');
+    if (active) requestAnimationFrame(() => centerRail(active));
+  }
+
+  function monthDay(d) { return `${d.getMonth() + 1}/${d.getDate()}`; }
+
+  function weekInsight(week, m) {
+    if (!m) return '';
+    const prevWeek = weeks[state.weekIndex - 1];
+    const prev = prevWeek ? weekMetrics(prevWeek) : null;
+    let sleepText = `本周平均睡眠 ${fmtDur(m.avgSleep)}`;
+    if (prev) {
+      const diff = Math.round(m.avgSleep - prev.avgSleep);
+      sleepText += diff === 0 ? '，与上周持平' : `，比上周${diff > 0 ? '多' : '少'} ${Math.abs(diff)} 分钟`;
+    }
+    const bedText = `入睡在 ${fmtClock(m.minBed)}–${fmtClock(m.maxBed)} 之间，跨度 ${fmtDur(m.spread)}`;
+    let driftText = '相邻两晚记录不足，暂时算不出参考截止偏移。';
+    if (m.avgAbsDrift !== null) {
+      driftText = `相对参考截止，平均每天偏移 ${fmtShortDur(Math.round(m.avgAbsDrift))}`;
+      if (m.maxDay) driftText += `，偏移最大的一晚是 ${monthDay(m.maxDay.date)}（${m.maxDay.drift > 0 ? '晚' : '早'} ${fmtDur(Math.abs(m.maxDay.drift))}）`;
+      driftText += '。';
+    }
+    return `<p>${sleepText}。${bedText}。${driftText}</p>`;  }
+
+  function renderWeek() {
+    const week = weeks[state.weekIndex];
+    const m = weekMetrics(week);
+    if (!m) {
+      weekView.innerHTML = `<div class="card"><div class="card-title">这一周还没有记录</div><p class="hint" style="margin:8px 0 0">左右滑动上方周条，或回到有记录的周。</p></div>`;
+      return;
+    }
+    const recordedDays = recorded(week.days);
+    const lateDay = recordedDays.reduce((best, d) => !best || d.cycle.sleepMin > best.cycle.sleepMin ? d : best, null);
+    const driftCount = m.driftValues.length;
+    const rangeMinutes = Math.max(60, Math.ceil(Math.max(...m.driftValues.map(Math.abs), 60) / 30) * 30);
+
+    weekView.innerHTML = `
+      <section class="hero" aria-label="本周睡眠概览">
+        <div class="hero-top">
+          <div>
+            <div class="hero-kicker">${monthDay(week.days[0].date)}–${monthDay(week.days[6].date)} · 平均总睡眠 · ${m.list.length} 天记录</div>
+            <div class="hero-number mono">${fmtDur(m.avgSleep)}</div>
+          </div>
+          <div class="hero-side mono">
+            平均入睡<b>${fmtClock(m.avgBed)}</b><br />
+            平均起床<b>${fmtClock(m.avgWake)}</b>
+          </div>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="small" style="display:flex;justify-content:space-between">
+          <span>入睡波动</span><span>跨度 <b style="color:var(--text)">${fmtDur(m.spread)}</b></span>
+        </div>
+        <div class="range-line"><div class="range-track" role="img" aria-label="最早入睡 ${fmtClock(m.minBed)}，最晚 ${fmtClock(m.maxBed)}"></div></div>
+        <div class="range-labels mono"><span>最早 <b>${fmtClock(m.minBed)}</b></span><span>最晚 <b>${fmtClock(m.maxBed)}</b></span></div>
+        <div class="metric-pair">
+          <div class="metric-pill"><span>平均每日偏移</span><b class="mono">${m.avgAbsDrift === null ? '—' : fmtShortDur(m.avgAbsDrift)}</b></div>
+          <div class="metric-pill"><span>最晚的一晚</span><b class="mono">${lateDay ? `${WEEKDAY[lateDay.date.getDay()]} ${fmtClock(lateDay.cycle.sleepMin)}` : '—'}</b></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="card-title">相对参考截止的偏移</span><span class="small">${driftCount} 晚可比</span></div>
+        <div class="chart-wrap">${driftChart(week, m, rangeMinutes)}</div>
+        <p class="chart-note">正数（橙）表示比参考截止晚睡，负数（绿）表示提前。浅色带是本周偏移范围；缺失下一晚记录时显示「—」，不跨日硬算。</p>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="card-title">每天睡了多久</span><span class="small">总睡眠含补觉</span></div>
+        <div class="chart-wrap">${durationChart(week, m)}</div>
+        <p class="chart-note">虚线是本周平均 ${fmtDur(m.avgSleep)}；灰色短柱表示没有记录。</p>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="card-title">睡眠区间</span><span class="small">入睡 → 起床</span></div>
+        <div class="chart-wrap">${intervalChart(week)}</div>
+        <p class="chart-note">同一行左侧是入睡、右侧是起床。条越长睡得越久；整列左右移动，就是入睡时间的波动。</p>
+      </section>
+
+      <section class="card insight">
+        <div class="card-head" style="margin-bottom:6px"><span class="card-title">这周的身体时钟</span></div>
+        ${weekInsight(week, m)}
+        <p>入睡和起床越接近每天同一时刻，昼夜节律越稳定。波动大的一周，先看是不是周末后移、或某几晚特别晚。</p>
+        <details class="research">
+          <summary>为什么关注睡眠波动？</summary>
+          <p>英国生物样本库约 6 万人、最长随访 7.8 年的队列研究显示：睡眠规律性（SRI）对全因死亡风险的预测强于睡眠总时长；规律性最低的一组，全因死亡风险明显更高。</p>
+          <p>综述还发现，入睡时间与睡眠时长的日间波动、社会时差，与肥胖、血糖调节变差、代谢综合征和心血管风险相关。以上是观察性证据，相关不等于因果，但规律作息通常被认为是低成本的改善方向。</p>
+          <p><a href="https://doi.org/10.1093/sleep/zsad253" target="_blank" rel="noreferrer">Windred 等，SLEEP 2024</a> · <a href="https://pubmed.ncbi.nlm.nih.gov/32700156/" target="_blank" rel="noreferrer">Zuraikat 等，Curr Diab Rep 2020</a> · <a href="https://pubmed.ncbi.nlm.nih.gov/36873401/" target="_blank" rel="noreferrer">Zhang &amp; Qin，Front Cardiovasc Med 2023</a></p>
+        </details>
+      </section>
+    `;
+  }
+
+  function durationChart(week, metrics) {
+    const W = 320, H = 126, top = 22, base = 98, plotH = 64;
+    const maxMinutes = Math.max(9 * 60, Math.ceil(Math.max(...week.days.map((d) => d.cycle ? d.cycle.totalMin : 0)) / 60) * 60);
+    const col = W / 7;
+    const avgY = base - (metrics.avgSleep / maxMinutes) * plotH;
+    let out = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="本周每天总睡眠时长，平均 ${fmtDur(metrics.avgSleep)}">`;
+    out += `<defs><linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7bd0ff"/><stop offset="1" stop-color="#3f7dff"/></linearGradient></defs>`;
+    out += `<line x1="6" y1="${avgY}" x2="${W - 6}" y2="${avgY}" stroke="#7bd0ff" stroke-width="1" stroke-dasharray="3 4" opacity=".6"/>`;
+    week.days.forEach((day, i) => {
+      const x = i * col + col / 2;
+      const c = day.cycle;
+      if (!c) {
+        out += `<rect x="${x - 9}" y="${base - 4}" width="18" height="4" rx="2" fill="#2a3140"/>`;
+        out += `<text x="${x}" y="${base + 15}" font-size="9" fill="#8b94a5" text-anchor="middle">—</text>`;
+      } else {
+        const h = Math.max(3, (c.totalMin / maxMinutes) * plotH);
+        out += `<rect x="${x - 10}" y="${base - h}" width="20" height="${h}" rx="4" fill="url(#barGrad)"/>`;
+        out += `<text x="${x}" y="${base - h - 5}" font-size="8.6" fill="#b8d4ff" text-anchor="middle">${hourLabel(c.totalMin)}</text>`;
+      }
+      out += `<text x="${x}" y="${base + 27}" font-size="9" fill="#8b94a5" text-anchor="middle">${day.date.getMonth() + 1}/${day.date.getDate()}</text>`;
+    });
+    return out + '</svg>';
+  }
+
+  const AXIS_START = 20 * 60;   // 20:00
+  const AXIS_END = 38 * 60;     // 次日 14:00
+  function axisMinutes(clockMinutes) { return clockMinutes + 1440; }
+  function intervalChart(week) {
+    const W = 320, labelW = 46, plotW = W - labelW - 3;
+    const rowH = 23, top = 18;
+    const H = top + 7 * rowH + 21;
+    const x = (axis) => labelW + ((axis - AXIS_START) / (AXIS_END - AXIS_START)) * plotW;
+    let out = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="本周每天入睡到起床的区间">`;
+    out += `<defs><linearGradient id="sleepGrad" gradientUnits="userSpaceOnUse" x1="${labelW}" y1="0" x2="${W}" y2="0"><stop offset="0" stop-color="#3f7dff"/><stop offset="1" stop-color="#7bd0ff"/></linearGradient></defs>`;
+    for (const tick of [20 * 60, 24 * 60, 30 * 60, 36 * 60]) {
+      const tx = x(tick + (tick === 20 * 60 ? 0 : 0));
+      out += `<line x1="${tx}" y1="${top - 2}" x2="${tx}" y2="${H - 20}" stroke="#232a35" stroke-width="1"/>`;
+      out += `<text x="${tx}" y="${H - 7}" font-size="8.3" fill="#6f7888" text-anchor="middle">${tick === 20 * 60 ? '20:00' : fmtClock(tick)}</text>`;
+    }
+    week.days.forEach((day, i) => {
+      const y = top + i * rowH + rowH / 2;
+      out += `<text x="0" y="${y + 3}" font-size="9.2" fill="#8b94a5">周${WEEKDAY[day.date.getDay()]} ${day.date.getDate()}</text>`;
+      const c = day.cycle;
+      if (!c) {
+        out += `<text x="${labelW + plotW / 2}" y="${y + 3}" font-size="8.5" fill="#596273" text-anchor="middle">—</text>`;
+        return;
+      }
+      const sleepAxis = axisMinutes(c.sleepMin);
+      const wakeAxis = axisMinutes(c.wakeMin);
+      const x1 = x(sleepAxis), x2 = x(wakeAxis);
+      out += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="url(#sleepGrad)" stroke-width="8" stroke-linecap="round"/>`;
+      if (x2 - x1 > 74) {
+        out += `<text x="${x1 + (x2 - x1) / 2}" y="${y + 3}" font-size="8.5" fill="#06121f" text-anchor="middle" font-weight="600">${fmtDur(c.totalMin)}</text>`;
+      }
+    });
+    return out + '</svg>';
+  }
+
+  function driftChart(week, metrics, rangeMinutes) {
+    const W = 320, H = 132, zeroY = 65, plotH = 33;
+    const col = W / 7;
+    const y = (value) => zeroY - (value / rangeMinutes) * plotH;
+    const values = week.days.map((d) => d.cycle ? d.cycle.drift : null).filter((v) => v !== null);
+    let out = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="本周每晚相对参考截止的偏移，正数表示晚睡">`;
+    if (values.length) {
+      const min = Math.min(...values), max = Math.max(...values);
+      if (max > min) {
+        out += `<rect x="4" y="${y(max)}" width="${W - 8}" height="${Math.max(2, y(min) - y(max))}" rx="4" fill="rgba(123,208,255,.07)" stroke="rgba(123,208,255,.16)" stroke-dasharray="2 4"/>`;
+      }
+    }
+    out += `<line x1="4" y1="${zeroY}" x2="${W - 4}" y2="${zeroY}" stroke="#39414f" stroke-width="1"/>`;
+    out += `<text x="${W - 4}" y="9" font-size="8.2" fill="#8b94a5" text-anchor="end">虚线 = 参考截止</text>`;
+    week.days.forEach((day, i) => {
+      const cx = i * col + col / 2;
+      const c = day.cycle;
+      if (!c || c.drift === null) {
+        out += `<text x="${cx}" y="${zeroY + 4}" font-size="9" fill="#5c6575" text-anchor="middle">—</text>`;
+      } else {
+        const dy = y(c.drift);
+        const late = c.drift > 0;
+        out += `<line x1="${cx}" y1="${zeroY}" x2="${cx}" y2="${dy}" stroke="${late ? 'rgba(255,128,102,.55)' : 'rgba(61,220,151,.5)'}" stroke-width="2" stroke-linecap="round"/>`;
+        out += `<circle cx="${cx}" cy="${dy}" r="4" fill="${late ? '#ff8066' : '#3ddc97'}" stroke="#171b22" stroke-width="2"/>`;
+        out += `<text x="${cx}" y="${late ? dy - 7 : dy + 12}" font-size="8.2" fill="${late ? '#ffab97' : '#7fe3ba'}" text-anchor="middle">${fmtSigned(c.drift)}</text>`;
+      }
+      out += `<text x="${cx}" y="${H - 5}" font-size="8.8" fill="#8b94a5" text-anchor="middle">${WEEKDAY[day.date.getDay()]} ${day.date.getDate()}</text>`;
+    });
+    return out + '</svg>';
+  }
+
+  /* ---------- 渲染：月 ---------- */
+  function monthCycles(year, month) {
+    return cycleList.filter((c) => c.date.getFullYear() === year && c.date.getMonth() === month);
+  }
+
+  function renderMonth() {
+    const { year, month } = state.month;
+    monthLabel.textContent = `${year}年${month + 1}月`;
+    const list = monthCycles(year, month);
+    const avgSleep = mean(list.map((c) => c.totalMin));
+    const avgBed = mean(list.map((c) => c.sleepMin));
+    const first = new Date(year, month, 1);
+    const startOffset = (first.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < startOffset; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+    while (cells.length % 7) cells.push(null);
+
+    const cal = cells.map((date) => {
+      if (!date) return `<button class="cal-cell empty" tabindex="-1" aria-hidden="true"></button>`;
+      const key = dateKey(date);
+      const c = cycles.get(key);
+      const selected = key === state.selectedKey;
+      const today = key === dateKey(DEMO_NOW);
+      const future = date > DEMO_NOW;
+      const classes = ['cal-cell', c ? 'has' : '', selected ? 'selected' : '', today ? 'today' : '', future ? 'future' : ''].filter(Boolean).join(' ');
+      if (!c) {
+        return `<button class="${classes}" data-key="${key}" aria-label="${date.getMonth() + 1}月${date.getDate()}日，${future ? '还没到这一天' : '没有记录'}" aria-pressed="${selected}">
+          <span class="d">${date.getDate()}</span>
+          <span class="sleep" style="color:#4f5868">${future ? '' : '—'}</span>
+        </button>`;
+      }
+      const drift = c.drift === null ? '—' : fmtSigned(c.drift);
+      const driftClass = c.drift === null ? 'none' : c.drift > 0 ? 'late' : 'early';
+      return `<button class="${classes}" data-key="${key}" aria-label="${date.getMonth() + 1}月${date.getDate()}日，睡眠 ${fmtDur(c.totalMin)}，相对参考截止 ${drift}" aria-pressed="${selected}">
+        <span class="d">${date.getDate()}</span>
+        <span class="sleep">${hourLabel(c.totalMin)}</span>
+        <span class="drift ${driftClass}">${drift}</span>
+      </button>`;
+    }).join('');
+
+    monthView.innerHTML = `
+      <div class="month-summary">
+        <span>记录 <b>${list.length}</b> 天</span>
+        <span>平均睡眠 <b>${avgSleep === null ? '—' : fmtDur(avgSleep)}</b></span>
+        <span>平均入睡 <b>${avgBed === null ? '—' : fmtClock(avgBed)}</b></span>
+      </div>
+      <section class="card" style="padding-bottom:12px">
+        <div class="cal-weekdays" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+        <div class="cal-grid" role="group" aria-label="${year}年${month + 1}月每日睡眠">${cal}</div>
+        <div class="cal-legend" aria-hidden="true">
+          <span><i style="background:#ff8066"></i>晚于参考截止</span>
+          <span><i style="background:#3ddc97"></i>早于参考截止</span>
+          <span><i style="background:#5c6575"></i>无法比较</span>
+        </div>
+      </section>
+      ${dayCard(state.selectedKey)}
+    `;
+  }
+
+  function dayCard(key) {
+    const c = cycles.get(key);
+    const date = parseKey(key);
+    if (!c) {
+      const future = date > DEMO_NOW;
+      return `<section class="card day-card">
+        <div class="day-head"><div><div class="day-date">${date.getMonth() + 1}月${date.getDate()}日 · 周${WEEKDAY[date.getDay()]}</div><p class="day-sub">${future ? '这一天还没到' : '这天没有记录'}</p></div></div>
+        <div class="empty-day">${future ? '还没到这一天，先看看别的日期吧。' : '没有睡眠记录，可在「今日」补录这一天的睡眠。'}</div>
+      </section>`;
+    }
+    const drift = c.drift === null ? '缺少下一晚记录' : `${c.drift > 0 ? '晚于' : '早于'}参考截止 ${fmtDur(Math.abs(c.drift))}`;
+    const driftClass = c.drift === null ? 'none' : c.drift > 0 ? '' : 'early';
+    const chips = Object.entries(c.catTotals).filter(([, v]) => v >= 1).map(([cat, minutes]) =>
+      `<span class="cat-chip"><i style="background:${CATS[cat].color}"></i>${CATS[cat].name} <b>${fmtDur(minutes)}</b></span>`
+    ).join('');
+    const shown = c.segments.slice(0, 4);
+    const rows = shown.map((s) => {
+      const dayMark = s.startAt >= 1440 ? '次日 ' : '';
+      const endMark = s.endAt >= 1440 && s.startAt < 1440 ? '次日 ' : '';
+      return `<div class="tl-row">
+        <div class="tl-left">
+          <span class="tl-time">${dayMark}${fmtClock(s.startAt)}–${endMark}${fmtClock(s.endAt)}</span>
+          <span class="tl-cat" style="color:${CATS[s.cat].color}">${CATS[s.cat].name}</span>
+          <span class="tl-note">${s.note || '（无备注）'}</span>
+        </div>
+        <span class="tl-dur">${fmtShortDur(s.endAt - s.startAt)}</span>
+      </div>`;
+    }).join('');
+    const rest = c.segments.length - shown.length;
+    return `<section class="card day-card">
+      <div class="day-head">
+        <div>
+          <div class="day-date">${date.getMonth() + 1}月${date.getDate()}日 · 周${WEEKDAY[date.getDay()]}</div>
+          <p class="day-sub">${c.napMin ? `主睡眠 ${fmtDur(c.durMin)} + 补觉 ${fmtDur(c.napMin)}` : '主睡眠，无补觉'}</p>
+        </div>
+        <span class="drift-pill ${driftClass}">${drift}</span>
+      </div>
+      <div class="day-times mono">
+        <span>入睡 <b>${fmtClock(c.sleepMin)}</b></span>
+        <span>起床 <b>${fmtClock(c.wakeMin)}</b></span>
+        <span>总睡眠 <b>${fmtDur(c.totalMin)}</b></span>
+      </div>
+      <div class="cat-chips">${chips}</div>
+      <div class="timeline">${rows}</div>
+      ${rest > 0 ? `<p class="tiny" style="margin:9px 0 0">预览只展示前 ${shown.length} 段，完整时间轴与编辑功能留在 App 内。</p>` : ''}
+    </section>`;
+  }
+
+  /* ---------- 交互 ---------- */
+  function setPanel(index, focusTab = false) {
+    state.panel = index;
+    const pager = document.getElementById('pager');
+    pager.scrollLeft = 0;
+    track.style.transform = `translateX(-${index * 50}%)`;
+    for (const [i, id] of [0, 1].entries()) {
+      const tab = document.getElementById(id ? 'tab-days' : 'tab-week');
+      tab.setAttribute('aria-selected', String(i === index));
+      tab.tabIndex = i === index ? 0 : -1;
+    }
+    if (focusTab) document.getElementById(index ? 'tab-days' : 'tab-week').focus();
+  }
+
+  function setWeek(index) {
+    if (index === state.weekIndex) return;
+    state.weekIndex = index;
+    renderRailActive();
+    renderWeek();
+  }
+  function renderRailActive() {
+    rail.querySelectorAll('.week-item').forEach((el) => {
+      const active = Number(el.dataset.index) === state.weekIndex;
+      el.setAttribute('aria-current', String(active));
+      if (active) centerRail(el);
+    });
+  }
+
+  function selectMonth(year, month) {
+    state.month = { year, month };
+    const list = monthCycles(year, month);
+    if (list.length) {
+      const last = list[list.length - 1];
+      state.selectedKey = last.key;
+    } else {
+      state.selectedKey = dateKey(new Date(year, month, 1));
+    }
+    renderMonth();
+  }
+
+  rail.addEventListener('click', (e) => {
+    const button = e.target.closest('.week-item');
+    if (button) { railTouched = false; setWeek(Number(button.dataset.index)); }
+  });
+
+  // 周条滑到底后，自动选中离中心最近的一周；只响应用户拖动，避免初始定位反选。
+  let railTimer = null;
+  let railTouched = false;
+  for (const type of ['pointerdown', 'touchstart', 'wheel']) {
+    rail.addEventListener(type, () => { railTouched = true; }, { passive: true });
+  }
+  rail.addEventListener('scroll', () => {
+    if (!railTouched) return;
+    clearTimeout(railTimer);
+    railTimer = setTimeout(() => {
+      const center = rail.scrollLeft + rail.clientWidth / 2;
+      let best = state.weekIndex, bestDist = Infinity;
+      rail.querySelectorAll('.week-item').forEach((el) => {
+        const elCenter = el.offsetLeft + el.offsetWidth / 2;
+        const dist = Math.abs(elCenter - center);
+        if (dist < bestDist) { bestDist = dist; best = Number(el.dataset.index); }
+      });
+      setWeek(best);
+    }, 140);
+  }, { passive: true });
+
+  document.getElementById('tab-week').addEventListener('click', () => setPanel(0));
+  document.getElementById('tab-days').addEventListener('click', () => setPanel(1));
+  for (const id of ['tab-week', 'tab-days']) {
+    document.getElementById(id).addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { setPanel(1, true); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { setPanel(0, true); e.preventDefault(); }
+    });
+  }
+
+  // 横向滑动切换面板；周条和月份浮层不参与
+  let start = null;
+  const pager = document.getElementById('pager');
+  pager.addEventListener('touchstart', (e) => {
+    if (e.target.closest('.no-swipe')) { start = null; return; }
+    const t = e.touches[0];
+    start = { x: t.clientX, y: t.clientY };
+  }, { passive: true });
+  pager.addEventListener('touchend', (e) => {
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x, dy = t.clientY - start.y;
+    if (Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(dy) * 1.3) setPanel(dx < 0 ? 1 : 0);
+    start = null;
+  }, { passive: true });
+
+  // 月份选择
+  const monthSheet = document.getElementById('month-sheet');
+  const monthGrid = document.getElementById('month-grid');
+  const sheetYear = document.getElementById('sheet-year');
+  function renderMonthGrid() {
+    sheetYear.textContent = String(state.sheetYear);
+    const withData = monthsWithData();
+    monthGrid.innerHTML = MONTH_NAMES.map((name, i) => {
+      const active = state.month.year === state.sheetYear && state.month.month === i;
+      const has = withData.has(`${state.sheetYear}-${i}`);
+      return `<button data-month="${i}" class="${has ? 'has-data' : ''}" aria-current="${active}" aria-label="${state.sheetYear}年${name}${has ? '，有记录' : '，无记录'}">${name}${has ? '<i></i>' : ''}</button>`;
+    }).join('');
+  }
+  function openSheet() {
+    state.sheetYear = state.month.year;
+    state.sheetOpen = true;
+    renderMonthGrid();
+    monthSheet.classList.add('open');
+    document.getElementById('sheet-close').focus();
+  }
+  function closeSheet() {
+    state.sheetOpen = false;
+    monthSheet.classList.remove('open');
+    document.getElementById('month-pill').focus();
+  }
+  document.getElementById('month-pill').addEventListener('click', openSheet);
+  document.getElementById('sheet-close').addEventListener('click', closeSheet);
+  monthSheet.addEventListener('click', (e) => { if (e.target === monthSheet) closeSheet(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.sheetOpen) closeSheet(); });
+  document.getElementById('year-prev').addEventListener('click', () => { state.sheetYear -= 1; renderMonthGrid(); });
+  document.getElementById('year-next').addEventListener('click', () => { state.sheetYear += 1; renderMonthGrid(); });
+  monthGrid.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-month]');
+    if (!button) return;
+    selectMonth(state.sheetYear, Number(button.dataset.month));
+    closeSheet();
+  });
+
+  monthView.addEventListener('click', (e) => {
+    const cell = e.target.closest('[data-key]');
+    if (!cell) return;
+    state.selectedKey = cell.dataset.key;
+    renderMonth();
+    requestAnimationFrame(() => {
+      const card = monthView.querySelector('.day-card');
+      const panel = document.getElementById('panel-days');
+      if (!card || !panel) return;
+      const cr = card.getBoundingClientRect(), pr = panel.getBoundingClientRect();
+      if (cr.top < pr.top + 4 || cr.bottom > pr.bottom - 4) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+      }
+    });
+  });
+
+  /* ---------- 启动 ---------- */
+  const params = new URLSearchParams(location.search);
+  if (params.get('panel') === 'days') setPanel(1); else setPanel(0);
+  if (params.get('month')) {
+    const [y, m] = params.get('month').split('-').map(Number);
+    if (y && m >= 1 && m <= 12) selectMonth(y, m - 1);
+  }
+  renderRail();
+  renderWeek();
+  renderMonth();
+  setPanel(params.get('panel') === 'days' ? 1 : 0);
+})();
+</script>
+</body>
+</html>

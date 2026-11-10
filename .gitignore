@@ -1,0 +1,26 @@
+node_modules/
+dist/
+.toolchain/
+android/app/build/
+android/build/
+android/.gradle/
+android/keystore.properties
+android/app/*.jks
+android/local.properties
+android/app/release/
+*.log
+.DS_Store
+docs/superpowers/.review/
+
+# 本机/个人数据与临时工作线，绝不进公开仓库
+.claude/
+out/
+tools/
+docs/backup-from-phone/
+docs/shots/
+docs/gpt-ds/
+docs/session-notes.md
+waketime-*.apk
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
