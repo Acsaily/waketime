@@ -38,6 +38,7 @@
 - 再装正式 v0.6.0 后再次读回：仍为 15 周期 / 124 段，0 处变化，`data-after-release.json`，SHA256 `d72f953ebd07206d7850353f09cde4b116a655d7ed6a4307927403c6c10a812f`；随后换回正式包，最终安装 `versionName 0.6.0 / versionCode 8`。
 - 证书 SHA-256 仍为 `4F:BC:C0:19:D2:2E:CB:3E:00:B8:AB:DF:2A:EF:B6:12:25:42:62:A5:73:5A:5B:33:D3:E1:A9:ED:EE:24:48:8E`，覆盖安装不丢数据。
 - 交付物：`waketime-0.6.0-release.apk`（根目录），SHA256 `1fd5940070ffe2465ba25720be6ae9e71d126b2b63423e1ce815d2f6c4724414`。
+- 公开发布（2026-11-11）：<https://github.com/Acsaily/waketime>，v0.6.0 Release <https://github.com/Acsaily/waketime/releases/tag/v0.6.0>。公开仓按 `.gitignore` 排除个人备份、真机截图、`docs/gpt-ds/`、`out/`、`tools/`、`.claude/` 与签名 key；APK 只作为 Release 资产上传。
 
 ## 未验证 / 待用户确认
 

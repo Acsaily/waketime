@@ -13,6 +13,7 @@ v0.5.0 的自定义分类与手动补分段仍保留在基线中；v0.5.0 的「
 
 ## Verified facts
 
+- 公开发布（2026-11-11）：GitHub 公开仓库 <https://github.com/Acsaily/waketime>，v0.6.0 Release <https://github.com/Acsaily/waketime/releases/tag/v0.6.0>；仓库不包含个人备份、真机截图、`docs/gpt-ds/`、`out/`、`tools/` 与签名 key。
 - 用户确认（2026-11-11）：v0.6.0 新历史页正常，可以收尾。
 - 真机（2026-11-11，Redmi Note 12 Turbo）：`waketime-0.6.0-release.apk` 同签名覆盖安装成功（0.6.0 / versionCode 8，证书 SHA-256 与历史一致）。安装前备份 15 周期 / 125 段（`docs/backup-from-phone/pre-v060-20261111/data-before-install.json`，SHA256 `d4adad05…`）；新版读回 15 周期 / 124 段，逐段比较 **0 处边界/备注/类别变化**，少的 1 段是原有 `sanitizeSegments` 清理的零时长段（start=end、空备注），不是记录丢失。装正式包后再次读回仍为 15/124、0 变化（`data-after-release.json`，SHA256 `d72f953e…`），最终正式包已装回。
 - 本机（2026-11-11）：Vitest **91 用例 / 10 文件全过**；`tsc --noEmit` + Vite 构建通过；原生 `:app:testDebugUnitTest` 通过（`TimerRepositoryTest` 34 + 工程示例 1）；`:app:assembleDebug`/`:app:assembleRelease` 成功。

@@ -2,7 +2,14 @@
 
 记录"清醒时间"的安卓 App：每天醒来录一次睡眠起止，App 算清醒预算、跑倒计时与秒表，白天随手"计次"并写备注，按天存档，可导出 TXT / PDF / JSON 给电脑上的 AI 做作息分析。
 
-自用项目，侧载安装，不联网、无账号。
+个人项目，公开源码；侧载安装，不联网、无账号。
+
+## 下载 / 安装
+
+- 公开仓库：<https://github.com/Acsaily/waketime>
+- 最新 APK：<https://github.com/Acsaily/waketime/releases/latest>
+- Android 7.0+（minSdk 24）。把 APK 传到手机点安装，或 `adb install -r waketime-0.6.0-release.apk`。
+- 如果手机上已有另一个签名的同包名版本，Android 不允许覆盖；需先导出备份、卸载旧版，再安装。
 
 ## 现在有什么
 
