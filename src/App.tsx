@@ -2,16 +2,16 @@ import { useState } from 'react';
 import { useApp } from './state/useApp';
 import { Today } from './pages/Today';
 import { History } from './pages/History';
-import { Export } from './pages/Export';
+import { Stats } from './pages/Stats';
 import { Settings } from './pages/Settings';
 import { SleepDialog, type SleepFormValue } from './components/SleepDialog';
 
-type Tab = 'today' | 'history' | 'export' | 'settings';
+type Tab = 'today' | 'history' | 'stats' | 'settings';
 
 const TABS: Array<{ key: Tab; label: string; icon: string }> = [
   { key: 'today', label: '今日', icon: '◷' },
   { key: 'history', label: '历史', icon: '▤' },
-  { key: 'export', label: '导出', icon: '⇪' },
+  { key: 'stats', label: '统计', icon: '◔' },
   { key: 'settings', label: '设置', icon: '⚙' },
 ];
 
@@ -59,7 +59,7 @@ export default function App() {
           <div className="recovery-banner">
             <b>已从 {api.recoveredFrom} 恢复 {api.data.cycles.length} 天记录</b>
             <p>
-              主数据文件上次没写完（可能是在保存时被系统杀掉），已自动改用备份。当前计时和今天的记录不受影响，可以继续记；建议现在到「导出」做一次全量备份。
+              主数据文件上次没写完（可能是在保存时被系统杀掉），已自动改用备份。当前计时和今天的记录不受影响，可以继续记；建议现在到「设置 → 导出与备份」做一次全量备份。
             </p>
             <button className="btn ghost" onClick={() => setRecoveryDismissed(true)}>
               知道了
@@ -72,8 +72,8 @@ export default function App() {
           <Today api={api} />
         ) : tab === 'history' ? (
           <History api={api} />
-        ) : tab === 'export' ? (
-          <Export api={api} />
+        ) : tab === 'stats' ? (
+          <Stats api={api} />
         ) : (
           <Settings api={api} />
         )}

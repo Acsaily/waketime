@@ -1,7 +1,7 @@
 {
   "name": "waketime",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.8.0",
   "type": "module",
   "description": "清醒时光 - 记录清醒时间的安卓应用",
   "scripts": {
@@ -19,6 +19,7 @@
     "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.5.3",
     "@capacitor/filesystem": "8.1.5",
+    "@capacitor/haptics": "8.0.2",
     "@capacitor/share": "8.0.3",
     "react": "19.3.1",
     "react-dom": "19.3.1"

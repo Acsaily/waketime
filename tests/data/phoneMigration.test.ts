@@ -11,7 +11,7 @@ describe.skipIf(!existsSync(path))('本次真机备份的隔离迁移与恢复�
   it('逐段保留所有原 ID、毫秒边界、备注、类别与来源', () => {
     const text = readFileSync(path, 'utf8'); const raw = JSON.parse(text);
     const migrated = parseDataText(text)!;
-    expect(migrated.schemaVersion).toBe(2); expect(migrated.cycles.length).toBe(raw.cycles.length);
+    expect(migrated.schemaVersion).toBe(3); expect(migrated.cycles.length).toBe(raw.cycles.length);
     for (const c of raw.cycles) {
       const next = migrated.cycles.find((n) => n.id === c.id)!;
       expect(next.sleepAtMs).toBe(c.sleepAtMs); expect(next.wakeAtMs).toBe(c.wakeAtMs);

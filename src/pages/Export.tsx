@@ -10,7 +10,7 @@ import { CycleSummary } from '../components/CycleSummary';
 
 type ExportKind = 'txt' | 'json' | 'pdf' | 'backup';
 
-export function Export({ api }: { api: AppApi }) {
+export function ExportPanel({ api }: { api: AppApi }) {
   const { data } = api;
   const [selected, setSelected] = useState<string>(data.cycles[0]?.id ?? '');
   const [status, setStatus] = useState<string | null>(null);
@@ -65,7 +65,8 @@ export function Export({ api }: { api: AppApi }) {
 
   if (data.cycles.length === 0) {
     return (
-      <div className="page">
+      <div className="section">
+        <div className="section-head"><span>导出与备份</span></div>
         <div className="hero-card empty">
           <div className="hero-title">还没有可导出的记录</div>
           <p className="hint">先记录几天，这里可以把当天记录导出成 TXT / PDF / JSON 交给电脑上的 AI。</p>
@@ -75,18 +76,22 @@ export function Export({ api }: { api: AppApi }) {
   }
 
   return (
-    <div className="page" aria-busy={busy}>
+    <>
       <div className="section">
         <div className="section-head">
-          <label htmlFor="export-cycle">选择周期</label>
+          <span>导出与备份</span>
+          <span className="small muted">发给电脑上的 AI</span>
         </div>
-        <select id="export-cycle" className="select" value={selected} disabled={busy} onChange={(e) => { setSelected(e.target.value); setStatus(null); setError(null); }}>
-          {data.cycles.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.id}（总睡眠 {formatHuman(summarizeCycle(c, api.now).totalSleepMs)}）
-            </option>
-          ))}
-        </select>
+        <label className="field">
+          <span>选择周期</span>
+          <select id="export-cycle" className="select" value={selected} disabled={busy} onChange={(e) => { setSelected(e.target.value); setStatus(null); setError(null); }}>
+            {data.cycles.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.id}（总睡眠 {formatHuman(summarizeCycle(c, api.now).totalSleepMs)}）
+              </option>
+            ))}
+          </select>
+        </label>
         {totals ? <CycleSummary totals={totals} categories={data.settings.categories} sleep className="export-summary" /> : null}
         {cycle?.closedAtMs === null ? <p className="tiny">本周期还未结束，导出的是当前已记录的内容。</p> : null}
       </div>
@@ -111,6 +116,6 @@ export function Export({ api }: { api: AppApi }) {
       {busy ? <p className="hint" role="status">正在生成，请勿重复点击…</p> : null}
       {status ? <p className="status" role="status">{status}</p> : null}
       {error || api.error ? <p className="error" role="alert">{error || api.error}</p> : null}
-    </div>
+    </>
   );
 }

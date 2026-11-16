@@ -12,16 +12,10 @@ import { changeCategories, requireSelectableCategory, type CategoryAction } from
 import { categoryOf } from '../core/segments';
 import { splitSegments, type SplitInput } from '../core/splitSegments';
 import { buildRestoredData, type RestoreBackup, type RestoreMode, type CategoryResolutions } from '../data/restore';
+import { uniqueCycleId } from '../core/cycleIds';
 
 
 /** 同一天第二次开启时不能覆盖已有周期：日期 id 加了后缀 */
-function uniqueCycleId(base: string, existing: Array<{ id: string }>): string {
-  const ids = new Set(existing.map((c) => c.id));
-  if (!ids.has(base)) return base;
-  let n = 2;
-  while (ids.has(`${base}-${n}`)) n++;
-  return `${base}-${n}`;
-}
 
 export interface NewSleepInput {
   /** 醒来时刻（通常就是"现在"） */
@@ -119,7 +113,9 @@ export function useApp() {
       requireWritable();
       if (!isNativePlatform) return;
       const sleepAtMs = input.wakeAtMs - input.sleepDurationMs;
-      const cycleId = (input as NewSleepInput & { cycleId?: string }).cycleId ?? cycleIdFor(input.wakeAtMs);
+      // 即使不是“开启第二天”，也不能用已存在的日期 id 覆盖旧周期（同一天重复录入会丢历史）。
+      const requestedId = (input as NewSleepInput & { cycleId?: string }).cycleId ?? cycleIdFor(input.wakeAtMs);
+      const cycleId = uniqueCycleId(requestedId, dataRef.current.cycles);
       const state = await WakeTimer.startCycle({ cycleId, sleepAtMs, wakeAtMs: input.wakeAtMs });
       let screenshotPath: string | null = null;
       if (input.screenshot) {

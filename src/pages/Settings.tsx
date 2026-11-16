@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { AppApi } from '../state/useApp';
 import { isNativePlatform, WakeTimer } from '../native/wakeTimer';
 import type { DeviceInfo } from '../native/contracts';
-import { CategoryManager } from '../components/CategoryManager';
+import { ExportPanel } from './Export';
 import { categoryConflicts, readRestoreBackup, type RestoreBackup, type CategoryResolutions } from '../data/restore';
 
 type Message = { text: string; error: boolean } | null;
@@ -13,6 +13,7 @@ export function Settings({ api }: { api: AppApi }) {
   const [newWord, setNewWord] = useState('');
   const [permMsg, setPermMsg] = useState<Message>(null);
   const [dataMsg, setDataMsg] = useState<Message>(null);
+  const [feedbackMsg, setFeedbackMsg] = useState<Message>(null);
   const [pendingRestore, setPendingRestore] = useState<RestoreBackup | null>(null);
   const [resolutions, setResolutions] = useState<CategoryResolutions>({});
   const conflicts = pendingRestore ? categoryConflicts(data.settings.categories, pendingRestore.categories) : [];
@@ -58,7 +59,7 @@ export function Settings({ api }: { api: AppApi }) {
   };
 
   const onClear = () => {
-    if (locked.current || !window.confirm('清空本机所有记录？建议先在「导出」页做一次全量备份。')) return;
+    if (locked.current || !window.confirm('清空本机所有记录？建议先在下方「导出与备份」做一次全量备份。')) return;
     void perform('data', async () => {
       await api.clearAll();
       setPendingRestore(null);
@@ -109,9 +110,19 @@ export function Settings({ api }: { api: AppApi }) {
     });
   };
 
+  const toggleFeedback = (patch: { hapticsEnabled?: boolean; soundEnabled?: boolean }, text: string) => {
+    if (locked.current) return;
+    locked.current = true;
+    setBusy(true);
+    setFeedbackMsg(null);
+    updateSettings(patch)
+      .then(() => setFeedbackMsg({ text, error: false }))
+      .catch((e) => setFeedbackMsg({ text: '保存失败：' + (e instanceof Error ? e.message : String(e)), error: true }))
+      .finally(() => { locked.current = false; setBusy(false); });
+  };
+
   return (
     <div className="page" aria-busy={busy}>
-      <CategoryManager api={api} />
       <div className="section">
         <div className="section-head"><span>通知栏计时</span></div>
         <label className="switch-row">
@@ -140,8 +151,30 @@ export function Settings({ api }: { api: AppApi }) {
       </div>
 
       <div className="section">
+        <div className="section-head"><span>操作反馈</span></div>
+        <label className="switch-row">
+          <span>触感反馈（计次与刻度拨动）</span>
+          <input type="checkbox" checked={data.settings.hapticsEnabled} disabled={busy} onChange={(e) => {
+            const enabled = e.target.checked;
+            toggleFeedback({ hapticsEnabled: enabled }, enabled ? '触感反馈已开启' : '触感反馈已关闭');
+          }} />
+        </label>
+        <label className="switch-row">
+          <span>音效（刻度、计次与合并）</span>
+          <input type="checkbox" checked={data.settings.soundEnabled} disabled={busy} onChange={(e) => {
+            const enabled = e.target.checked;
+            toggleFeedback({ soundEnabled: enabled }, enabled ? '音效已开启' : '音效已关闭');
+          }} />
+        </label>
+        <p className="tiny">关掉后只保留画面反馈；系统静音或省电模式下音效也可能被系统拦截。</p>
+        {feedbackMsg ? <p className={feedbackMsg.error ? 'error' : 'status'} role={feedbackMsg.error ? 'alert' : 'status'}>{feedbackMsg.text}</p> : null}
+      </div>
+
+      <ExportPanel api={api} />
+
+      <div className="section">
         <div className="section-head"><span>数据</span></div>
-        <p className="hint">所有记录只存在这台手机里（应用私有目录），保存时会保留备份。<strong>卸载前请先到「导出」页做一次全量备份</strong>，否则数据会跟着 App 一起删除。</p>
+        <p className="hint">所有记录只存在这台手机里（应用私有目录），保存时会保留备份。<strong>卸载前请先在「导出与备份」做一次全量备份</strong>，否则数据会跟着 App 一起删除。</p>
         <div className="buttons-grid">
           <button className="btn" disabled={busy} onClick={() => fileRef.current?.click()}>从备份恢复</button>
           <button className="btn ghost" disabled={busy} onClick={onClear}>清空本机记录</button>

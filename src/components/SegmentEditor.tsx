@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Segment } from '../data/store';
 import type { SegmentCategory } from '../native/contracts';
-import { categoryLabel, categoryOf } from '../core/segments';
+import { categoryOf } from '../core/segments';
 import { formatClock, formatHuman } from '../core/time';
 import { Sheet } from './Sheet';
 import { SegmentSplitter } from './SegmentSplitter';
-import { selectableCategories, type CategoryDefinition } from '../core/categories';
+import { categoryPath, selectableCategories, type CategoryDefinition } from '../core/categories';
 import type { SplitInput } from '../core/splitSegments';
+import { MergeSlide } from './MergeSlide';
+import { CategoryPicker } from './CategoryPicker';
+import { feedback, type FeedbackPrefs } from '../core/feedback';
 
 type Details = { note: string; category: SegmentCategory };
 type MergePair = { first: Segment; second: Segment };
@@ -27,6 +30,7 @@ export function SegmentEditor({
   onMerge,
   onSplit,
   categories,
+  prefs,
 }: {
   segment: Segment;
   segments: Segment[];
@@ -38,6 +42,7 @@ export function SegmentEditor({
   onMerge: (firstId: string, secondId: string, category: SegmentCategory) => Promise<void>;
   onSplit: (input: SplitInput) => Promise<void>;
   categories: CategoryDefinition[];
+  prefs: FeedbackPrefs;
 }) {
   const [note, setNote] = useState(segment.note ?? '');
   const [category, setCategory] = useState<SegmentCategory>(categoryOf(segment));
@@ -68,9 +73,11 @@ export function SegmentEditor({
   const pair: MergePair | null = direction === 'previous' && canPrevious
     ? { first: previous!, second: current }
     : direction === 'next' && canNext ? { first: current, second: next! } : null;
-  const availableCategories = napping ? ['sleep'] : selectableCategories(categories, categoryOf(current ?? segment), !open).map((c) => c.id);
-  const mergeCategories = pair?.second.endAtMs === 0 && categoryOf(pair.second) === 'sleep'
-    ? ['sleep'] : selectableCategories(categories, undefined, pair?.second.endAtMs !== 0).map((c) => c.id);
+  const mergeSleepOnly = pair?.second.endAtMs === 0 && categoryOf(pair.second) === 'sleep';
+  const mergeSelectable = mergeSleepOnly
+    ? categories.filter((c) => c.id === 'sleep')
+    : selectableCategories(categories, undefined, pair?.second.endAtMs !== 0);
+  const mergeCategories = mergeSelectable.map((c) => c.id);
   const retainedNotes = pair
     ? [...new Set([pair.first.note, pair.second.note].filter((text) => text?.trim()))].join('\n')
     : '';
@@ -82,6 +89,7 @@ export function SegmentEditor({
     setError(null);
     try {
       await action();
+      feedback(prefs, label === '合并' ? 'merge' : label === '拆分' ? 'split' : 'tick');
       onClose();
     } catch (e) {
       setError(`${label}失败：${e instanceof Error ? e.message : String(e)}。修改仍保留，可重试。`);
@@ -104,17 +112,17 @@ export function SegmentEditor({
         {' · '}{formatHuman(Math.max(0, (current?.endAtMs || now) - segment.startAtMs))}
       </p>
       {!current ? <p className="error" role="alert">这一段已被其他操作更改或合并，请关闭后重新选择。</p> : null}
-      {splitting && current ? <SegmentSplitter segment={current} segments={segments} now={now} categories={categories} busy={busy} onCancel={() => setSplitting(false)} onSave={(input) => perform(() => onSplit(input), '拆分')} /> : <>
+      {splitting && current ? <SegmentSplitter segment={current} segments={segments} now={now} categories={categories} busy={busy} prefs={prefs} onCancel={() => setSplitting(false)} onSave={(input) => perform(() => onSplit(input), '拆分')} /> : <>
       <fieldset className="editor-fields" disabled={busy || !current}>
         <legend>这段时间的类别</legend>
-        <div className="category-options">
-          {availableCategories.map((value) => (
-            <label key={value} className={`category-option category-${value} ${category === value ? 'selected' : ''}`}>
-              <input type="radio" name="segment-category" value={value} checked={category === value} onChange={() => setCategory(value)} />
-              {categoryLabel(value, categories)}
-            </label>
-          ))}
-        </div>
+        <CategoryPicker
+          categories={napping ? categories.filter((c) => c.id === 'sleep') : categories}
+          value={category}
+          onChange={setCategory}
+          allowSleep={napping || !open}
+          originalId={categoryOf(current ?? segment)}
+          disabled={busy || !current}
+        />
         {open ? <p className="tiny">{napping ? '补觉进行中。请用「结束补觉」恢复清醒，不能在这里改成清醒类别。' : '进行中段只能选清醒类别；要记录睡眠，请用「开始补觉」。已完成段可以标为补觉。'}</p> : null}
         <label className="field">
           <span>备注（可留空）</span>
@@ -150,23 +158,29 @@ export function SegmentEditor({
         {pair && !dirty ? (
           <div className="merge-preview">
             <p className="hint mono">{formatClock(pair.first.startAtMs)} – {pair.second.endAtMs ? formatClock(pair.second.endAtMs) : '现在'}</p>
-            <p className="hint">{categoryLabel(categoryOf(pair.first), categories)} + {categoryLabel(categoryOf(pair.second), categories)}，合并后{pair.second.endAtMs === 0 ? '仍在进行' : '为已完成段'}。</p>
+            <p className="hint">{categoryPath(categoryOf(pair.first), categories)} + {categoryPath(categoryOf(pair.second), categories)}，合并后{pair.second.endAtMs === 0 ? '仍在进行' : '为已完成段'}。</p>
             <fieldset className="editor-fields" disabled={busy}>
               <legend>请选择合并后的类别（必选）</legend>
-              <div className="category-options">
-                {mergeCategories.map((value) => (
-                  <label key={value} className={`category-option category-${value} ${mergeCategory === value ? 'selected' : ''}`}>
-                    <input type="radio" name="merge-category" checked={mergeCategory === value} onChange={() => setMergeCategory(value)} />
-                    {categoryLabel(value, categories)}
-                  </label>
-                ))}
-              </div>
+              <CategoryPicker
+                categories={mergeSleepOnly ? categories.filter((c) => c.id === 'sleep') : categories}
+                value={mergeCategory}
+                onChange={setMergeCategory}
+                allowSleep={mergeCategories.includes('sleep')}
+                disabled={busy}
+                compact
+              />
             </fieldset>
             <p className="tiny">合并后保留的备注</p>
             <p className="retained-notes">{retainedNotes || '两段都没有备注'}</p>
-            <button className="btn block" disabled={busy || mergeCategory === null || !mergeCategories.includes(mergeCategory)} onClick={() => {
-              if (mergeCategory) void perform(() => onMerge(pair.first.id, pair.second.id, mergeCategory), '合并');
-            }}>确认合并{direction === 'previous' ? '前一段' : '后一段'}</button>
+            <MergeSlide
+              label={`向右滑动，合并${direction === 'previous' ? '前一段' : '后一段'}`}
+              disabled={busy || mergeCategory === null || !mergeCategories.includes(mergeCategory)}
+              busy={busy}
+              prefs={prefs}
+              onConfirm={() => {
+                if (mergeCategory) void perform(() => onMerge(pair.first.id, pair.second.id, mergeCategory), '合并');
+              }}
+            />
           </div>
         ) : null}
       </div>

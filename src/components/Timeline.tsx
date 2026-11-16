@@ -1,7 +1,8 @@
 import type { Segment } from '../data/store';
-import { categoryLabel, categoryOf } from '../core/segments';
+import { categoryOf } from '../core/segments';
 import { formatClock, formatHuman } from '../core/time';
-import { defaultCategories, type CategoryDefinition } from '../core/categories';
+import { categoryPath, defaultCategories, type CategoryDefinition } from '../core/categories';
+import { categoryColor } from '../core/categoryColors';
 
 export function Timeline({
   segments,
@@ -33,14 +34,14 @@ export function Timeline({
             {crossDay ? <span className="tag">跨日</span> : null}
           </div>
           <div className="timeline-note">
-            <span className={`segment-category category-${category}`}>{categoryLabel(category, categories)}</span>
+            <span className={`segment-category category-${category}`} style={{ color: categoryColor(category, categories) }}>{categoryPath(category, categories)}</span>
             <span className="segment-note">{s.note || <span className="muted">{running ? category === 'sleep' ? '补觉中…' : '进行中…' : '没有备注'}</span>}</span>
             {onEdit ? <span className="timeline-edit-hint">编辑 / 拆分 / 合并</span> : null}
           </div>
           <div className="timeline-duration">{duration < 60_000 ? '<1m' : formatHuman(duration)}</div>
         </>;
         return onEdit ? (
-          <button key={s.id} className={`timeline-row ${running ? 'running' : ''}`} disabled={disabled} onClick={() => onEdit(s)} aria-label={`编辑第 ${s.seq} 段，${categoryLabel(category, categories)}，${formatClock(s.startAtMs)} 开始`}>
+          <button key={s.id} className={`timeline-row ${running ? 'running' : ''}`} disabled={disabled} onClick={() => onEdit(s)} aria-label={`编辑第 ${s.seq} 段，${categoryPath(category, categories)}，${formatClock(s.startAtMs)} 开始`}>
             {content}
           </button>
         ) : <div key={s.id} className={`timeline-row ${running ? 'running' : ''}`}>{content}</div>;

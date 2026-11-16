@@ -1,4 +1,4 @@
-import { completeCategories, isSystemCategory, type CategoryDefinition } from '../core/categories';
+import { completeCategories, isFixedSystemCategory, type CategoryDefinition } from '../core/categories';
 import { parseDataText, type AppData, type Cycle } from './store';
 
 export interface RestoreBackup {
@@ -20,7 +20,8 @@ export function readRestoreBackup(input: unknown): RestoreBackup {
 export function categoryConflicts(local: CategoryDefinition[], backup: CategoryDefinition[]): CategoryConflict[] {
   return backup.flatMap((b) => {
     const a = local.find((c) => c.id === b.id);
-    return a && !isSystemCategory(b.id) && (a.name !== b.name || a.archived !== b.archived)
+    return a && !isFixedSystemCategory(b.id)
+      && (a.name !== b.name || a.archived !== b.archived || (a.color ?? null) !== (b.color ?? null) || (a.parentId ?? null) !== (b.parentId ?? null))
       ? [{ id: b.id, local: a, backup: b }] : [];
   });
 }

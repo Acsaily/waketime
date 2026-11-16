@@ -5,6 +5,8 @@ import { categoryName, selectableCategories } from '../core/categories';
 import { categoryOf } from '../core/segments';
 import { matchesSnapshot, snapshotOf, splitSegments, type SplitInput } from '../core/splitSegments';
 import { formatHuman } from '../core/time';
+import { SplitWheel } from './SplitWheel';
+import type { FeedbackPrefs } from '../core/feedback';
 
 export function localDateTime(ms: number): string {
   const d = new Date(ms); const p = (n: number) => String(n).padStart(2, '0');
@@ -12,21 +14,27 @@ export function localDateTime(ms: number): string {
 }
 export function exactTime(ms: number): string { return localDateTime(ms).replace('T', ' '); }
 
-export function SegmentSplitter({ segment, segments, now, categories, busy, onCancel, onSave }: {
+function midpoint(from: number, to: number): number {
+  return from + Math.max(0, Math.floor((to - from) / 2 / 60_000)) * 60_000;
+}
+
+export function SegmentSplitter({ segment, segments, now, categories, busy, prefs, onCancel, onSave }: {
   segment: Segment; segments: Segment[]; now: number; categories: CategoryDefinition[]; busy: boolean;
+  prefs: FeedbackPrefs;
   onCancel: () => void; onSave: (input: SplitInput) => Promise<void>;
 }) {
   const [expected] = useState(() => snapshotOf(segment));
+  const [openedAt] = useState(now);
   const [cuts, setCuts] = useState<number[]>([]);
   const [parts, setParts] = useState(() => [{ category: categoryOf(segment), note: segment.note }]);
-  const [mode, setMode] = useState<'clock' | 'elapsed'>('clock');
-  const [clock, setClock] = useState(() => localDateTime(segment.startAtMs + Math.floor(((segment.endAtMs || now) - segment.startAtMs) / 2)));
-  const [elapsed, setElapsed] = useState('');
+  const [cutMs, setCutMs] = useState(() => midpoint(segment.startAtMs, segment.endAtMs || openedAt));
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
   const current = segments.find((s) => s.id === segment.id);
   const stale = !current || !matchesSnapshot(current, expected);
-  const end = segment.endAtMs || now;
+  // 进行中的段在打开拆分器时冻结尾端，避免每 500ms 重排刻度、把用户拨动的位置顶回去。
+  const end = segment.endAtMs || openedAt;
+  const wheelStart = cuts.at(-1) ?? segment.startAtMs;
   const draft: SplitInput = { expected, cuts, parts };
   let validation = '';
   if (cuts.length) {
@@ -34,19 +42,22 @@ export function SegmentSplitter({ segment, segments, now, categories, busy, onCa
     catch (e) { validation = e instanceof Error ? e.message : String(e); }
   }
   const addCut = () => {
-    const value = mode === 'clock' ? new Date(clock).getTime() : elapsed.trim() ? segment.startAtMs + Math.round(Number(elapsed) * 60_000) : NaN;
     const last = cuts.at(-1) ?? segment.startAtMs;
-    if (!Number.isSafeInteger(value) || value <= last || value >= end) {
-      setError('请按先后顺序添加原段内部的分界点，不能重复、越界或使用未来时间。'); return;
+    if (!Number.isSafeInteger(cutMs) || cutMs <= last || cutMs >= end) {
+      setError('请拨到原段内部的整分钟分界点，不能重复或越界。'); return;
     }
-    setCuts([...cuts, value]); setParts([...parts, { ...parts[parts.length - 1] }]);
-    setClock(localDateTime(value + Math.floor((end - value) / 2))); setError(null);
+    setCuts([...cuts, cutMs]);
+    setParts([...parts, { ...parts[parts.length - 1] }]);
+    setCutMs(midpoint(cutMs, end));
+    setError(null);
   };
   const removeCut = (index: number) => {
     const a = parts[index], b = parts[index + 1];
     const merged = { category: a.category, note: [...new Set([a.note, b.note].filter((n) => n.trim()))].join('\n') };
     setCuts(cuts.filter((_, i) => i !== index));
-    setParts([...parts.slice(0, index), merged, ...parts.slice(index + 2)]); setError(null);
+    setParts([...parts.slice(0, index), merged, ...parts.slice(index + 2)]);
+    setCutMs(midpoint(index === 0 ? segment.startAtMs : cuts[index - 1], end));
+    setError(null);
   };
   return <section className="split-editor" aria-label="补分段编辑器">
     <h3>拆分这一段</h3>
@@ -55,14 +66,19 @@ export function SegmentSplitter({ segment, segments, now, categories, busy, onCa
     {stale ? <p className="error" role="alert">这一段已被其他操作修改，请关闭后重新打开。</p> : null}
     <fieldset className="editor-fields" disabled={busy || stale}>
       {!preview ? <>
-        <div className="category-options" role="group" aria-label="分界点输入方式">
-          <button className={`chip ${mode === 'clock' ? 'active' : ''}`} onClick={() => setMode('clock')}>按日期和时刻</button>
-          <button className={`chip ${mode === 'elapsed' ? 'active' : ''}`} onClick={() => setMode('elapsed')}>按经过时长</button>
-        </div>
-        {mode === 'clock' ? <label className="field"><span>分界日期和时刻</span><input aria-label="分界日期和时刻" type="datetime-local" step="1" value={clock} onChange={(e) => setClock(e.target.value)} /></label>
-          : <label className="field"><span>从原段开始经过多少分钟</span><input type="number" aria-label="经过分钟数" min="0" step="0.01" placeholder="例如 80 = 1 小时 20 分" value={elapsed} onChange={(e) => setElapsed(e.target.value)} /></label>}
-        <button className="btn block" onClick={addCut}>添加分界点</button>
-        {cuts.length ? <div className="split-cut-list">{cuts.map((cut, i) => <div key={cut}><span>{exactTime(cut)}</span><button className="chip" aria-label={`删除第${i + 1}个分界点`} onClick={() => removeCut(i)}>删除分界</button></div>)}</div> : <p className="hint">至少添加一个分界点，可以一次添加多个。</p>}
+        <SplitWheel
+          key={`${segment.id}:${cuts.join('-')}`}
+          startMs={wheelStart}
+          endMs={end}
+          initialMs={cutMs}
+          disabled={busy || stale}
+          prefs={prefs}
+          onChange={setCutMs}
+        />
+        <button className="btn block" disabled={busy || stale || cutMs <= wheelStart || cutMs >= end} onClick={addCut}>
+          在 {exactTime(cutMs)} 添加分界点
+        </button>
+        {cuts.length ? <div className="split-cut-list">{cuts.map((cut, i) => <div key={cut}><span>{exactTime(cut)}</span><button type="button" className="chip" aria-label={`删除第${i + 1}个分界点`} onClick={() => removeCut(i)}>删除分界</button></div>)}</div> : <p className="hint">向上或向下拨动刻度，找到要补的那一分钟，再添加分界点。可以一次添加多个。</p>}
       </> : null}
       {cuts.length ? <div className="split-parts">
         {parts.map((part, i) => {

@@ -3,16 +3,16 @@ import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import type { LiveState, TimerSegment } from '../native/contracts';
 import { DAY_MS, computeCycle } from '../core/time';
 import { categoryOf, repairWakeGap } from '../core/segments';
-import { completeCategories, defaultCategories, isCategoryId, parseCategories, type CategoryDefinition } from '../core/categories';
+import { completeCategories, defaultCategories, isCategoryId, parseCategories, PRE_SLEEP_CATEGORY, type CategoryDefinition } from '../core/categories';
 
-// schema 2 增加类别目录；读取仍兼容 schema 1，未来版本拒绝而不覆盖。
-export const SCHEMA_VERSION = 2;
+// schema 3 增加分类颜色与两级父子关系；读取仍兼容 schema 1/2，未来版本拒绝而不覆盖。
+export const SCHEMA_VERSION = 3;
 const DATA_FILE = 'waketime/data.json';
 const TMP_FILE = 'waketime/data.tmp.json';
 const PREV_FILE = 'waketime/data.prev.json';
 const BACKUP_DIR = 'waketime/backups';
 const LS_KEY = 'waketime.data';
-export const APP_VERSION = '0.6.0';
+export const APP_VERSION = '0.8.0';
 
 export interface Segment extends TimerSegment {}
 
@@ -49,6 +49,9 @@ export interface Settings {
   notificationsEnabled: boolean;
   quickNotes: string[];
   categories: CategoryDefinition[];
+  /** 分段工具与计次的触感/音效；旧数据没有字段时默认开启。 */
+  hapticsEnabled: boolean;
+  soundEnabled: boolean;
 }
 
 export interface AppData {
@@ -66,6 +69,8 @@ export function defaultData(): AppData {
       notificationsEnabled: true,
       quickNotes: ['工作', '吃饭', '休息', '刷手机'],
       categories: defaultCategories(),
+      hapticsEnabled: true,
+      soundEnabled: true,
     },
     cycles: [],
   };
@@ -84,6 +89,8 @@ function normalize(raw: unknown): AppData {
       notificationsEnabled: typeof settings?.notificationsEnabled === 'boolean' ? settings.notificationsEnabled : d.settings.notificationsEnabled,
       quickNotes: Array.isArray(settings?.quickNotes) ? settings.quickNotes.filter((s): s is string => typeof s === 'string').slice(0, 8) : d.settings.quickNotes,
       categories,
+      hapticsEnabled: typeof settings?.hapticsEnabled === 'boolean' ? settings.hapticsEnabled : d.settings.hapticsEnabled,
+      soundEnabled: typeof settings?.soundEnabled === 'boolean' ? settings.soundEnabled : d.settings.soundEnabled,
     },
     cycles,
   };
@@ -141,7 +148,7 @@ export function parseDataText(text: string | null | undefined): AppData | null {
   try {
     const raw = JSON.parse(text) as Partial<AppData>;
     if (!raw || typeof raw !== 'object') return null;
-    if (raw.schemaVersion !== 1 && raw.schemaVersion !== SCHEMA_VERSION) return null;
+    if (raw.schemaVersion !== 1 && raw.schemaVersion !== 2 && raw.schemaVersion !== SCHEMA_VERSION) return null;
     if ((raw.schemaVersion === SCHEMA_VERSION || raw.settings?.categories !== undefined)
       && !parseCategories(raw.settings?.categories)) return null;
     if (!Array.isArray(raw.cycles)) return null;
@@ -365,13 +372,23 @@ export function applyLiveState(data: AppData, live: LiveState, nowMs: number): A
 
   // 新周期比旧周期晚：把旧周期关掉（结束时间 = 新周期的入睡时刻），
   // 同时封口旧会话里没结束的段，否则历史里会留下一个永远“进行中”的段。
+  // 最后一次计次到睡觉的开放尾段，默认标成“睡前时间（待分配）”；不改其他未分类段。
   const cycles = data.cycles
     .filter((c) => c.id !== cycle.id)
     .map((c) => {
       if (c.closedAtMs !== null || c.wakeAtMs >= live.sleepAtMs) return c;
-      const segs = (c.session?.segments ?? []).map((s) =>
-        s.endAtMs === 0 ? { ...s, endAtMs: Math.max(s.startAtMs, live.sleepAtMs) } : { ...s }
-      );
+      const source = c.session?.segments ?? [];
+      const openTailId = source
+        .filter((s) => s.endAtMs === 0)
+        .sort((a, b) => b.startAtMs - a.startAtMs)[0]?.id;
+      const segs = source.map((s) => {
+        if (s.endAtMs !== 0) return { ...s };
+        const endAtMs = Math.max(s.startAtMs, live.sleepAtMs);
+        const bedtime = s.id === openTailId
+          && categoryOf(s) === 'unclassified'
+          && endAtMs > s.startAtMs;
+        return { ...s, endAtMs, category: bedtime ? PRE_SLEEP_CATEGORY : s.category };
+      });
       return {
         ...c,
         closedAtMs: live.sleepAtMs,

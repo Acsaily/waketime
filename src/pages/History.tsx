@@ -205,6 +205,7 @@ export function History({ api }: { api: AppApi }) {
             categories={data.settings.categories}
             onSave={(patch) => api.updateSegment(editor.cycleId, editor.segment.id, patch)}
             onMerge={(firstId, secondId, category) => api.mergeSegments(editor.cycleId, firstId, secondId, category)}
+            prefs={data.settings}
           />
         ) : null}
       </div>

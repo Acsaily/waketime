@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import type { Cycle, Segment } from '../data/store';
 import type { CategoryDefinition } from '../core/categories';
-import { completeCategories } from '../core/categories';
+import { categoryPath, completeCategories } from '../core/categories';
+import { categoryColor } from '../core/categoryColors';
 import type { DayMetric, MonthView } from '../core/history';
 import {
   dateKeyOfMs,
@@ -15,20 +16,6 @@ import {
 import { summarizeCycle } from '../core/segments';
 import { formatClock, formatHuman } from '../core/time';
 import { Timeline } from './Timeline';
-
-const CATEGORY_COLORS: Record<string, string> = {
-  work: '#4c8dff',
-  daily: '#3ddc97',
-  unclassified: '#8b94a5',
-  sleep: '#ffb02e',
-};
-const EXTRA_COLORS = ['#c792ea', '#ff8066', '#7bd0ff', '#a3e635', '#f472b6', '#ffb02e'];
-
-function categoryColor(id: string, catalog: CategoryDefinition[]): string {
-  if (CATEGORY_COLORS[id]) return CATEGORY_COLORS[id];
-  const index = catalog.findIndex((c) => c.id === id);
-  return EXTRA_COLORS[Math.abs(index) % EXTRA_COLORS.length];
-}
 
 function CategoryChips({
   cycle,
@@ -49,7 +36,7 @@ function CategoryChips({
       {visible.map((c) => (
         <span className="history-chip" key={c.id}>
           <i style={{ background: categoryColor(c.id, catalog) }} />
-          {c.name}{c.archived ? '（已停用）' : ''}
+          {categoryPath(c.id, catalog)}{c.archived ? '（已停用）' : ''}
           <b>{formatHuman(totals.categoryMs[c.id] ?? 0)}</b>
         </span>
       ))}

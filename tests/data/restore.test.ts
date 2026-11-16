@@ -10,7 +10,7 @@ import { cycle, segment, T, H } from '../fixtures';
 describe('分类、拆分、导出与恢复闭环', () => {
   function data() {
     const d = defaultData();
-    d.settings.categories.push({ id: 'cat-study', name: '学习', archived: true });
+    d.settings.categories.push({ id: 'cat-study', name: '学习', archived: true, parentId: null });
     const s = segment(); let id = 0;
     const parts = splitSegments([s], 'a', { expected: snapshotOf(s), cuts: [T + H],
       parts: [{ category: 'cat-study', note: '原备注\n资料' }, { category: 'daily', note: '生活' }] }, T + 3 * H, () => `split-${++id}`);
@@ -29,7 +29,7 @@ describe('分类、拆分、导出与恢复闭环', () => {
     const d = data(); const json = buildBackupJson(d.cycles, d.settings); const parsed = JSON.parse(json);
     expect(parsed.settings.categories).toEqual(d.settings.categories);
     expect(parsed.cycleSummaries[0].categoryMs['cat-study']).toBe(H);
-    expect(parsed.cycleSummaries[0].categorySummaries).toContainEqual({ id: 'cat-study', name: '学习', archived: true, durationMs: H });
+    expect(parsed.cycleSummaries[0].categorySummaries).toContainEqual({ id: 'cat-study', name: '学习', archived: true, durationMs: H, parentId: null, parentName: null, color: null });
     expect(parseDataText(json)?.cycles).toEqual(d.cycles);
   });
   it('在隔离空记录上恢复再导出，标签、备注和全部边界一致', () => {

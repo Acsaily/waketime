@@ -1,5 +1,6 @@
 import type { CategoryDefinition } from '../core/categories';
-import { completeCategories } from '../core/categories';
+import { categoryPath, completeCategories } from '../core/categories';
+import { categoryColor } from '../core/categoryColors';
 import type { CycleSummary as Totals } from '../core/segments';
 import { formatHuman } from '../core/time';
 
@@ -10,7 +11,10 @@ export function CycleSummary({ totals, categories, sleep = false, className = ''
   const catalog = completeCategories(categories, Object.keys(totals.categoryMs).map((category) => ({ category })));
   return <div className={`cycle-summary ${className}`} aria-label="本周期分类汇总">
     {catalog.filter((c) => c.id !== 'sleep' && (c.id === 'unclassified' || (totals.categoryMs[c.id] ?? 0) > 0)).map((c) => (
-      <div key={c.id}><span>{c.name}{c.archived ? '（已停用）' : ''}</span><strong>{formatHuman(totals.categoryMs[c.id] ?? 0)}</strong></div>
+      <div key={c.id}>
+        <span><i className="category-color-dot" style={{ background: categoryColor(c.id, catalog) }} aria-hidden="true" />{categoryPath(c.id, catalog)}{c.archived ? '（已停用）' : ''}</span>
+        <strong>{formatHuman(totals.categoryMs[c.id] ?? 0)}</strong>
+      </div>
     ))}
     {sleep ? <div><span>总睡眠</span><strong>{formatHuman(totals.totalSleepMs)}</strong></div> : null}
   </div>;

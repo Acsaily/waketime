@@ -2,8 +2,8 @@ import { Capacitor } from '@capacitor/core';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { APP_VERSION, SCHEMA_VERSION, defaultData, type Cycle, type Settings } from '../data/store';
-import { categoryName, completeCategories, defaultCategories, type CategoryDefinition } from '../core/categories';
-import { categoryLabel, categoryOf, summarizeCycle } from '../core/segments';
+import { categoryName, categoryPath, childrenOf, completeCategories, defaultCategories, type CategoryDefinition } from '../core/categories';
+import { categoryOf, summarizeCycle } from '../core/segments';
 import { formatClock, formatDate, formatDuration, formatHuman } from '../core/time';
 import { buildTrend, formatSigned, summarizeTrend } from '../core/trends';
 
@@ -14,14 +14,30 @@ function segmentLines(cycle: Cycle, nowMs: number, categories: CategoryDefinitio
     const end = Math.min(s.endAtMs || nowMs, cycle.closedAtMs ?? nowMs);
     const dur = Math.max(0, end - s.startAtMs);
     const note = s.note?.trim() ? s.note.trim() : '（无备注）';
-    return `${formatClock(s.startAtMs)}-${formatClock(end)}  ${formatHuman(dur).padEnd(6)}  [${categoryLabel(categoryOf(s), categories)}] ${note}${s.endAtMs ? '' : '  [进行中]'}`;
+    return `${formatClock(s.startAtMs)}-${formatClock(end)}  ${formatHuman(dur).padEnd(6)}  [${categoryPath(categoryOf(s), categories)}] ${note}${s.endAtMs ? '' : '  [进行中]'}`;
   });
 }
 
 export function categorySummaryText(totals: ReturnType<typeof summarizeCycle>, categories: CategoryDefinition[]): string {
   const catalog = completeCategories(categories, Object.keys(totals.categoryMs).map((category) => ({ category })));
-  return catalog.filter((c) => c.id !== 'sleep' && (c.id === 'unclassified' || (totals.categoryMs[c.id] ?? 0) > 0))
-    .map((c) => `${c.name}${c.archived ? '（已停用）' : ''} ${formatHuman(totals.categoryMs[c.id] ?? 0)}`).join('；');
+  const parts: string[] = [];
+  for (const root of catalog.filter((c) => !c.parentId && c.id !== 'sleep')) {
+    const own = totals.categoryMs[root.id] ?? 0;
+    const kids = childrenOf(catalog, root.id).filter((c) => (totals.categoryMs[c.id] ?? 0) > 0);
+    const total = own + kids.reduce((sum, c) => sum + (totals.categoryMs[c.id] ?? 0), 0);
+    if (total <= 0 && root.id !== 'unclassified') continue;
+    const label = `${root.name}${root.archived ? '（已停用）' : ''}`;
+    if (kids.length > 0) {
+      const detail = [
+        ...kids.map((c) => `${c.name} ${formatHuman(totals.categoryMs[c.id] ?? 0)}`),
+        ...(own > 0 ? [`未细分 ${formatHuman(own)}`] : []),
+      ].join('；');
+      parts.push(`${label} ${formatHuman(total)}（${detail}）`);
+    } else {
+      parts.push(`${label} ${formatHuman(total)}`);
+    }
+  }
+  return parts.join('；');
 }
 
 export function buildDayTxt(cycle: Cycle, allCycles: Cycle[] = [cycle], categories: CategoryDefinition[] = defaultCategories()): string {
@@ -96,9 +112,14 @@ export function buildBackupJson(cycles: Cycle[], settings: Settings = defaultDat
       cycles,
       cycleSummaries: cycles.map((c) => {
         const totals = summarizeCycle(c, nowMs);
-        return { cycleId: c.id, ...totals, categorySummaries: Object.entries(totals.categoryMs).map(([id, durationMs]) => ({
-          id, name: categoryName(id, categories), archived: categories.find((item) => item.id === id)?.archived ?? true, durationMs,
-        })) };
+        return { cycleId: c.id, ...totals, categorySummaries: Object.entries(totals.categoryMs).map(([id, durationMs]) => {
+          const cat = categories.find((item) => item.id === id);
+          const parent = cat?.parentId ? categories.find((item) => item.id === cat.parentId) : null;
+          return {
+            id, name: categoryName(id, categories), archived: cat?.archived ?? true, durationMs,
+            parentId: cat?.parentId ?? null, parentName: parent?.name ?? null, color: cat?.color ?? null,
+          };
+        }) };
       }),
       // 给 AI 的分析字段：每天睡眠时长/入睡/起床/超时或提前，以及汇总
       trend,

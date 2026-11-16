@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="google" content="notranslate" />
+<title>分段与计次交互预览 · 清醒时光</title>
+<style>
+  :root {
+    --bg: #0e1014;
+    --card: #171b22;
+    --card-2: #1e242d;
+    --text: #eef1f6;
+    --muted: #8b94a5;
+    --accent: #4c8dff;
+    --accent-2: #7bd0ff;
+    --line: #262d38;
+    --amber: #ffb86b;
+    --green: #3ddc97;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; min-height: 100%; overflow-x: hidden; }
+  body {
+    background: radial-gradient(1100px 760px at 30% -10%, #101827 0%, #07090c 55%);
+    color: var(--text);
+    font-family: -apple-system, 'MiSans', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  .mono { font-variant-numeric: tabular-nums; }
+  .stage { min-height: 100dvh; display: flex; align-items: center; justify-content: center; gap: 34px; padding: 20px; }
+  .app-shell {
+    position: relative; display: flex; flex-direction: column;
+    width: min(390px, 100vw); height: min(860px, calc(100dvh - 40px));
+    background: var(--bg); border: 1px solid #242b36; border-radius: 28px;
+    overflow: hidden; box-shadow: 0 30px 90px rgba(0,0,0,.55); flex: none;
+  }
+  .app-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: calc(16px + env(safe-area-inset-top)) 18px 8px; flex: none; }
+  .app-header h1 { font-size: 22px; margin: 0; letter-spacing: .3px; }
+  .app-header .subtitle { margin: 3px 0 0; color: var(--muted); font-size: 11.5px; }
+  .header-actions { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+  .pill-badge { font-size: 10px; color: var(--accent-2); border: 1px solid rgba(123,208,255,.28); background: rgba(76,141,255,.08); border-radius: 999px; padding: 4px 8px; white-space: nowrap; }
+  .sound-btn { width: 36px; height: 36px; border-radius: 11px; border: 1px solid var(--line); background: var(--card); color: var(--accent-2); font-size: 15px; }
+  .sound-btn[aria-pressed='false'] { color: var(--muted); opacity: .6; }
+  .page-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 14px calc(74px + env(safe-area-inset-bottom)); scrollbar-width: none; }
+  .page-scroll::-webkit-scrollbar { display: none; }
+  .notice { margin: 0 0 10px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 11px; background: rgba(23,27,34,.8); color: var(--muted); font-size: 10.5px; line-height: 1.6; }
+  .notice b { color: var(--text); font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px 15px; margin-bottom: 12px; }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+  .card-title { font-size: 13.5px; font-weight: 600; }
+  .small { font-size: 11px; color: var(--muted); }
+  .tiny { font-size: 10.5px; line-height: 1.65; color: var(--muted); }
+
+  .timeline { display: flex; flex-direction: column; }
+  .seg-row { display: grid; grid-template-columns: 4px 1fr auto; gap: 10px; align-items: stretch; border: 0; background: transparent; text-align: left; padding: 9px 0; border-top: 1px solid var(--line); width: 100%; }
+  .seg-row:first-child { border-top: 0; }
+  .seg-bar { border-radius: 99px; background: var(--cat, #8b94a5); }
+  .seg-main { min-width: 0; }
+  .seg-top { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+  .seg-time { font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .seg-cat { font-size: 10.5px; color: var(--cat, #8b94a5); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .seg-cat i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .seg-note { margin-top: 3px; color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .seg-end { font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .seg-end b { color: var(--text); font-weight: 600; }
+  .seg-row.open .seg-time::after { content: ' · 进行中'; color: var(--accent-2); font-weight: 400; font-size: 9.5px; }
+  .seg-row.open .seg-bar { box-shadow: 0 0 0 2px rgba(123,208,255,.22); }
+  .edit-hint { margin: 6px 0 0; font-size: 10.5px; color: var(--muted); }
+
+  .lap-zone { display: flex; align-items: center; gap: 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .lap-btn { position: relative; width: 78px; height: 78px; flex: none; border-radius: 50%; border: 1px solid rgba(123,208,255,.42); background: radial-gradient(circle at 35% 25%, #2d4d73, #1b2b40 68%); color: var(--text); font-size: 13px; font-weight: 600; box-shadow: 0 9px 24px rgba(0,0,0,.35), inset 0 0 0 4px rgba(76,141,255,.08); transition: transform .08s ease, box-shadow .15s ease; }
+  .lap-btn:active { transform: scale(.94); box-shadow: 0 3px 12px rgba(0,0,0,.4), inset 0 0 0 4px rgba(76,141,255,.2); }
+  .lap-btn .ring { position: absolute; inset: -6px; border-radius: 50%; border: 1px solid rgba(123,208,255,.25); opacity: 0; }
+  .lap-btn.pulse .ring { animation: lapRing .45s ease-out; }
+  @keyframes lapRing { 0% { transform: scale(.9); opacity: .8; } 100% { transform: scale(1.25); opacity: 0; } }
+  .lap-copy { min-width: 0; }
+  .lap-copy b { display: block; font-size: 13px; }
+  .lap-copy p { margin: 4px 0 0; font-size: 10.5px; line-height: 1.6; color: var(--muted); }
+  .lap-count { color: var(--accent-2); font-variant-numeric: tabular-nums; }
+
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4,1fr); gap: 2px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: rgba(14,16,20,.94); border-top: 1px solid var(--line); backdrop-filter: blur(14px); }
+  .tab { border: 0; background: transparent; color: var(--muted); font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 3px 0 0; min-height: 44px; }
+  .tab .ico { font-size: 16px; line-height: 1; }
+  .tab.active { color: var(--accent-2); }
+
+  .sheet-mask { position: absolute; inset: 0; background: rgba(4,6,9,.66); display: none; align-items: flex-end; z-index: 30; }
+  .sheet-mask.open { display: flex; }
+  .sheet { width: 100%; max-height: 88%; display: flex; flex-direction: column; background: var(--card); border-top: 1px solid var(--line); border-radius: 22px 22px 0 0; overflow: hidden; }
+  .sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px 8px; }
+  .sheet-title { font-size: 15px; font-weight: 600; }
+  .sheet-sub { margin: 3px 0 0; font-size: 10.5px; color: var(--muted); }
+  .icon-btn { border: 1px solid var(--line); background: var(--card-2); color: var(--text); border-radius: 10px; width: 34px; height: 34px; display: grid; place-items: center; font-size: 17px; flex: none; }
+  .sheet-body { overflow-y: auto; padding: 0 16px calc(18px + env(safe-area-inset-bottom)); scrollbar-width: none; }
+  .sheet-body::-webkit-scrollbar { display: none; }
+  .seg-summary { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 12px; background: var(--card-2); margin-bottom: 11px; }
+  .seg-summary .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cat); flex: none; }
+  .seg-summary b { font-size: 12px; }
+  .seg-summary span { font-size: 10.5px; color: var(--muted); }
+  .seg-summary .grow { flex: 1; min-width: 0; }
+  .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 12px; }
+  .mode-tabs button { border: 0; background: transparent; color: var(--muted); border-radius: 9px; min-height: 36px; font-size: 12px; }
+  .mode-tabs button[aria-selected='true'] { color: var(--text); background: #26354c; box-shadow: inset 0 0 0 1px rgba(123,208,255,.18); }
+
+  .cut-readout { text-align: center; padding: 3px 0 8px; }
+  .cut-readout .time { font-size: 31px; font-weight: 650; letter-spacing: -.4px; font-variant-numeric: tabular-nums; }
+  .cut-readout .durations { margin-top: 3px; color: var(--muted); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+  .cut-readout .durations b { color: var(--text); font-weight: 600; }
+  .wheel-card { position: relative; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(180deg, #121720, #151a22); overflow: hidden; }
+  .wheel-range { display: flex; justify-content: space-between; padding: 8px 12px 0; font-size: 9.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .wheel { position: relative; height: 264px; overflow-y: scroll; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; touch-action: pan-y; }
+  .wheel::-webkit-scrollbar { display: none; }
+  .wheel-fade { position: absolute; left: 0; right: 0; height: 66px; pointer-events: none; z-index: 2; }
+  .wheel-fade.top { top: 0; background: linear-gradient(#151a22, rgba(21,26,34,0)); }
+  .wheel-fade.bottom { bottom: 0; background: linear-gradient(rgba(21,26,34,0), #151a22); }
+  .wheel-center { position: absolute; left: 8px; right: 8px; top: 50%; height: 30px; transform: translateY(-50%); border-top: 1px solid rgba(123,208,255,.6); border-bottom: 1px solid rgba(123,208,255,.6); background: rgba(76,141,255,.07); border-radius: 7px; pointer-events: none; z-index: 3; }
+  .wheel-center::before { content: ''; position: absolute; left: -2px; top: 50%; width: 4px; height: 18px; transform: translateY(-50%); border-radius: 9px; background: var(--accent-2); box-shadow: 0 0 12px rgba(123,208,255,.6); }
+  .wheel-center.pulse { animation: wheelPulse .13s ease-out; }
+  @keyframes wheelPulse { 0% { background: rgba(123,208,255,.28); } 100% { background: rgba(76,141,255,.07); } }
+  .wheel-pad { height: 117px; }
+  .wheel-row { height: 30px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 13px 0 18px; scroll-snap-align: center; color: #6f7888; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+  .wheel-row .tick { flex: 1; height: 1px; background: #2a3240; }
+  .wheel-row.minor .tick { width: 16px; flex: none; background: #303947; }
+  .wheel-row.five .tick { background: #3c4657; }
+  .wheel-row.fifteen { color: var(--text); font-weight: 600; }
+  .wheel-row.fifteen .tick { background: rgba(123,208,255,.38); }
+  .wheel-row .label { width: 34px; text-align: right; }
+  .wheel-row .rel { width: 38px; color: #596272; font-size: 9px; text-align: right; }
+  .wheel-row.fifteen .rel { color: #8e9ab0; }
+  .wheel-tools { display: flex; align-items: center; gap: 8px; padding: 9px 10px 10px; border-top: 1px solid var(--line); }
+  .step-btn { flex: 1; border: 1px solid var(--line); background: var(--card-2); color: var(--text); border-radius: 10px; min-height: 36px; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .step-btn:active { background: #29364a; }
+  .wheel-tip { flex: 1.4; text-align: center; font-size: 9.5px; color: var(--muted); line-height: 1.45; }
+
+  .parts { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .parts-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1px; }
+  .part-card { border: 1px solid var(--line); border-radius: 13px; background: var(--card-2); padding: 10px 11px; }
+  .part-top { display: flex; align-items: baseline; gap: 7px; }
+  .part-num { font-size: 10px; color: var(--muted); width: 30px; flex: none; }
+  .part-dur { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .part-time { margin-left: auto; color: var(--muted); font-size: 9.5px; font-variant-numeric: tabular-nums; }
+  .cat-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .cat-chip { border: 1px solid var(--line); background: #171c25; color: var(--muted); border-radius: 999px; padding: 4px 8px; font-size: 9.5px; display: inline-flex; align-items: center; gap: 4px; }
+  .cat-chip i { width: 5px; height: 5px; border-radius: 50%; background: var(--c); }
+  .cat-chip[aria-pressed='true'] { color: var(--text); border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, #171c25); }
+  .part-note { margin: 7px 0 0 30px; font-size: 9.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .merge-empty { padding: 18px 10px; text-align: center; color: var(--muted); font-size: 11.5px; }
+  .merge-pair { display: grid; grid-template-columns: 1fr 14px 1fr; gap: 5px; align-items: stretch; margin-bottom: 11px; }
+  .merge-card { border: 1px solid var(--line); border-radius: 12px; background: var(--card-2); padding: 9px 10px; min-width: 0; }
+  .merge-card .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cat); margin-bottom: 6px; }
+  .merge-card b { display: block; font-size: 10.5px; color: var(--muted); font-weight: 500; }
+  .merge-card .t { margin-top: 3px; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .merge-card .n { margin-top: 3px; font-size: 9.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .merge-seam { align-self: center; width: 14px; height: 1px; background: repeating-linear-gradient(90deg, #455066 0 3px, transparent 3px 6px); transition: width .12s ease, opacity .12s ease; }
+  .merge-pair.pulled .merge-seam { width: 3px; opacity: .3; }
+  .merge-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 2px 0 8px; font-size: 10.5px; color: var(--muted); }
+  .merge-meta b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .dir-toggle { display: inline-flex; border: 1px solid var(--line); background: var(--card-2); border-radius: 9px; padding: 2px; gap: 2px; margin-bottom: 10px; }
+  .dir-toggle button { border: 0; background: transparent; color: var(--muted); border-radius: 7px; padding: 5px 9px; font-size: 10px; }
+  .dir-toggle button[aria-pressed='true'] { background: #26354c; color: var(--text); }
+  .slide-track { position: relative; height: 48px; border: 1px solid rgba(123,208,255,.3); border-radius: 999px; background: #121a26; overflow: hidden; touch-action: none; user-select: none; }
+  .slide-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, rgba(76,141,255,.35), rgba(123,208,255,.52)); }
+  .slide-text { position: absolute; inset: 0; display: grid; place-items: center; color: #b7c5d8; font-size: 10.5px; pointer-events: none; }
+  .slide-thumb { position: absolute; top: 4px; left: 4px; width: 40px; height: 38px; border-radius: 999px; background: linear-gradient(180deg, #5b9aff, #3974dc); color: #fff; display: grid; place-items: center; font-size: 19px; box-shadow: 0 5px 14px rgba(0,0,0,.35); pointer-events: none; }
+  .slide-track.ready { border-color: rgba(61,220,151,.65); box-shadow: 0 0 0 2px rgba(61,220,151,.1); }
+  .slide-track.ready .slide-fill { background: linear-gradient(90deg, rgba(61,220,151,.28), rgba(61,220,151,.55)); }
+  .slide-track.ready .slide-thumb { background: linear-gradient(180deg, #57e2ac, #26b77f); }
+  .merge-fallback { margin-top: 8px; width: 100%; border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 10px; min-height: 36px; font-size: 10.5px; }
+
+  .sheet-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .btn { border: 1px solid var(--line); background: var(--card-2); color: var(--text); border-radius: 11px; min-height: 44px; padding: 8px 15px; font-size: 12.5px; }
+  .btn.primary { border-color: rgba(76,141,255,.5); background: linear-gradient(180deg, #3e7be5, #2e61c5); color: #fff; font-weight: 600; }
+  .btn.ghost { background: transparent; color: var(--muted); }
+  .btn:disabled { opacity: .42; cursor: default; }
+  .btn.primary:disabled { opacity: .4; }
+  .sheet-actions .btn { flex: 1; }
+
+  .toast { position: absolute; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom)); transform: translate(-50%, 8px); max-width: 84%; padding: 9px 13px; border: 1px solid rgba(123,208,255,.26); border-radius: 999px; background: rgba(20,28,40,.96); color: var(--text); font-size: 11px; box-shadow: 0 10px 30px rgba(0,0,0,.4); opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; z-index: 50; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  .preview-note { width: 250px; color: var(--muted); font-size: 12px; line-height: 1.75; flex: none; }
+  .preview-note b { color: var(--text); display: block; font-size: 13px; margin-bottom: 6px; }
+  .preview-note .tip { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .preview-note kbd { font-family: inherit; color: var(--accent-2); }
+  @media (max-width: 900px) { .preview-note { display: none; } }
+  @media (max-width: 640px) { .stage { padding: 0; display: block; } .app-shell { width: 100%; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; } }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
+</style>
+</head>
+<body>
+<div class="stage">
+  <aside class="preview-note" aria-hidden="true">
+    <b>分段与计次 · 交互预览</b>
+    演示数据，不读写真实记录。目标是让拆分、合并和计次更像在“操作实物”。
+    <div class="tip">
+      <kbd>点任意时间段</kbd>：打开编辑<br />
+      <kbd>上下拨刻度</kbd>：选择拆分点<br />
+      <kbd>滑动</kbd>：合并两段<br />
+      <kbd>点计次</kbd>：感受触感节奏
+    </div>
+    <div class="tip">
+      声音由 Web Audio 合成，不依赖外部素材；这里用中心刻度脉冲模拟触感，正式版接原生 Haptics。右上角可静音。
+    </div>
+  </aside>
+
+  <div class="app-shell" id="app">
+    <header class="app-header">
+      <div>
+        <h1>清醒时光</h1>
+        <p class="subtitle">11月14日 星期六 · 分段工具预览</p>
+      </div>
+      <div class="header-actions">
+        <button class="sound-btn" id="sound-toggle" aria-pressed="true" aria-label="关闭操作音效">♪</button>
+        <span class="pill-badge">预览版</span>
+      </div>
+    </header>
+
+    <main class="page-scroll">
+      <p class="notice"><b>怎么试：</b>点下面任意一段，拨动刻度选择切分点；或切到“合并”滑动合并。所有改动只在这个页面内演示。</p>
+
+      <section class="card">
+        <div class="card-head"><span class="card-title">今天的时间轴</span><span class="small" id="seg-count">5 段</span></div>
+        <div class="timeline" id="timeline"></div>
+        <p class="edit-hint">点一段打开编辑；最后一段是进行中的清醒段。</p>
+        <div class="lap-zone">
+          <button class="lap-btn" id="lap-btn"><span class="ring"></span>计次</button>
+          <div class="lap-copy">
+            <b>计次并继续</b>
+            <p>按下去有短触感；计次后当前段封口，新开一段。<span class="lap-count" id="lap-count">已计 5 次</span></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="card-title">设计要点</span><span class="small">方案预览</span></div>
+        <div class="tiny" style="line-height:1.8">
+          · 拆分只选“切在哪”，不填表格；刻度 1 分钟一格，5 / 15 分钟有节拍。<br />
+          · 合并只做“是否合并”，滑动确认，减少误触。<br />
+          · 计次保留现在的流程，加入按压、短音和轻震。<br />
+          · 声音默认开启，可随时静音；不依赖网络或外部音频。
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar" aria-label="主导航">
+      <button class="tab active"><span class="ico">◷</span>今日</button>
+      <button class="tab" data-tab="历史"><span class="ico">▤</span>历史</button>
+      <button class="tab" data-tab="统计"><span class="ico">◔</span>统计</button>
+      <button class="tab" data-tab="设置"><span class="ico">⚙</span>设置</button>
+    </nav>
+
+    <div class="sheet-mask" id="editor-mask" role="dialog" aria-modal="true" aria-label="编辑时间段">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div>
+            <div class="sheet-title" id="editor-title">编辑这一段</div>
+            <p class="sheet-sub" id="editor-sub"></p>
+          </div>
+          <button class="icon-btn" id="editor-close" aria-label="关闭">×</button>
+        </div>
+        <div class="sheet-body">
+          <div class="seg-summary" id="seg-summary"></div>
+          <div class="mode-tabs" role="tablist" aria-label="编辑方式">
+            <button role="tab" id="tab-split" aria-selected="true">拆分</button>
+            <button role="tab" id="tab-merge" aria-selected="false">合并</button>
+          </div>
+          <div id="editor-panel"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const CATS = {
+    work: { name: '工作', color: '#4c8dff' },
+    daily: { name: '日常', color: '#3ddc97' },
+    'cat-discuss': { name: '讨论', color: '#c792ea' },
+    'cat-ai': { name: 'Ai', color: '#55c7e8' },
+    'cat-mech': { name: '机械', color: '#ff9f43' },
+    unclassified: { name: '未分类', color: '#8b94a5' },
+    'pre-sleep': { name: '睡前时间（待分配）', color: '#ffb86b' },
+  };
+  const ROW = 30;
+  const MIN = 60000;
+  const pad = (n) => String(n).padStart(2, '0');
+  const hm = (minutes) => `${pad(Math.floor(minutes / 60) % 24)}:${pad(minutes % 60)}`;
+  const dur = (minutes) => {
+    const m = Math.max(0, Math.round(minutes));
+    const h = Math.floor(m / 60);
+    return h ? `${h}h${pad(m % 60)}` : `${m}m`;
+  };
+  const catOf = (id) => CATS[id] || CATS.unclassified;
+
+  let state = {
+    segments: [
+      { id: 's1', start: 510, end: 610, cat: 'work', note: '写代码' },
+      { id: 's2', start: 610, end: 670, cat: 'daily', note: '早饭、收拾' },
+      { id: 's3', start: 670, end: 790, cat: 'work', note: '会议' },
+      { id: 's4', start: 790, end: 855, cat: 'cat-discuss', note: '讨论方案' },
+      { id: 's5', start: 855, end: null, cat: 'unclassified', note: '' },
+    ],
+    now: 920,
+    laps: 5,
+    sound: true,
+    editorId: null,
+    tab: 'split',
+    cut: null,
+    partCats: [],
+    mergeDir: 'previous',
+    mergeCat: null,
+    lastTick: -1,
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const timeline = $('timeline');
+  const mask = $('editor-mask');
+  const panel = $('editor-panel');
+  const toastEl = $('toast');
+  let toastTimer = 0;
+  let audioCtx = null;
+  let gestured = false;
+  const markGesture = () => { gestured = true; };
+  document.addEventListener('pointerdown', markGesture, { capture: true, once: true });
+  document.addEventListener('touchstart', markGesture, { capture: true, once: true, passive: true });
+  document.addEventListener('keydown', markGesture, { capture: true, once: true });
+
+  function showToast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toastEl.classList.remove('show'), 2200);
+  }
+
+  function beep(freq = 1400, duration = 0.026, volume = 0.05) {
+    if (!state.sound || !gestured) return;
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      audioCtx ||= new Ctx();
+      if (audioCtx.state === 'suspended') void audioCtx.resume();
+      const t = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(200, freq * 0.72), t + duration);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(volume, t + 0.003);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t); osc.stop(t + duration + 0.01);
+    } catch {}
+  }
+  function pulseWheel() {
+    const center = document.querySelector('.wheel-center');
+    if (!center) return;
+    center.classList.remove('pulse');
+    void center.offsetWidth;
+    center.classList.add('pulse');
+  }
+  function feedback(kind = 'tick') {
+    if (kind === 'strong') {
+      beep(1100, 0.04, 0.075);
+      pulseWheel();
+    } else if (kind === 'success') {
+      beep(1650, 0.05, 0.07);
+      window.setTimeout(() => beep(2100, 0.055, 0.05), 55);
+    } else {
+      beep(1450, 0.022, 0.04);
+      pulseWheel();
+    }
+  }
+
+  function sorted() {
+    return [...state.segments].sort((a, b) => a.start - b.start);
+  }
+  function endOf(seg) { return seg.end ?? state.now; }
+  function findSeg(id) { return state.segments.find((s) => s.id === id); }
+
+  function renderTimeline() {
+    const list = sorted();
+    $('seg-count').textContent = `${list.length} 段`;
+    $('lap-count').textContent = `已计 ${state.laps} 次`;
+    timeline.innerHTML = list.map((seg) => {
+      const cat = catOf(seg.cat);
+      const open = seg.end === null;
+      return `<button class="seg-row ${open ? 'open' : ''}" data-seg="${seg.id}" style="--cat:${cat.color}">
+        <span class="seg-bar"></span>
+        <span class="seg-main">
+          <span class="seg-top"><span class="seg-time mono">${hm(seg.start)}</span><span class="seg-cat"><i></i>${cat.name}</span></span>
+          <span class="seg-note">${seg.note || (open ? '进行中…' : '没有备注')}</span>
+        </span>
+        <span class="seg-end mono">${open ? '<b>现在</b>' : hm(seg.end)}<br />${dur(endOf(seg) - seg.start)}</span>
+      </button>`;
+    }).join('');
+    timeline.querySelectorAll('[data-seg]').forEach((btn) => btn.addEventListener('click', () => openEditor(btn.dataset.seg)));
+  }
+
+  function openEditor(id) {
+    const seg = findSeg(id);
+    if (!seg) return;
+    state.editorId = id;
+    state.tab = 'split';
+    state.cut = Math.floor((seg.start + endOf(seg)) / 2);
+    if (state.cut <= seg.start) state.cut = seg.start + 1;
+    if (state.cut >= endOf(seg)) state.cut = endOf(seg) - 1;
+    state.partCats = [seg.cat, seg.cat];
+    state.mergeDir = 'previous';
+    state.mergeCat = seg.cat;
+    state.lastTick = -1;
+    mask.classList.add('open');
+    renderEditor();
+  }
+  function closeEditor() {
+    mask.classList.remove('open');
+    state.editorId = null;
+  }
+
+  function adjacent(seg) {
+    const list = sorted();
+    const i = list.findIndex((s) => s.id === seg.id);
+    return {
+      prev: i > 0 && list[i - 1].end !== null && list[i - 1].end === seg.start ? list[i - 1] : null,
+      next: i >= 0 && list[i + 1] && seg.end !== null && seg.end === list[i + 1].start ? list[i + 1] : null,
+    };
+  }
+
+  function renderEditor() {
+    const seg = findSeg(state.editorId);
+    if (!seg) return;
+    const cat = catOf(seg.cat);
+    const open = seg.end === null;
+    $('editor-title').textContent = '编辑这一段';
+    $('editor-sub').textContent = `${hm(seg.start)} – ${open ? '现在' : hm(seg.end)} · ${dur(endOf(seg) - seg.start)}${open ? ' · 进行中' : ''}`;
+    $('seg-summary').innerHTML = `<span class="dot" style="--cat:${cat.color};background:${cat.color}"></span><span class="grow"><b>${cat.name}</b> <span>${seg.note || '没有备注'}</span></span><span class="mono">${dur(endOf(seg) - seg.start)}</span>`;
+    $('tab-split').setAttribute('aria-selected', String(state.tab === 'split'));
+    $('tab-merge').setAttribute('aria-selected', String(state.tab === 'merge'));
+    if (state.tab === 'split') renderSplit(seg); else renderMerge(seg);
+  }
+
+  function renderSplit(seg) {
+    const start = seg.start;
+    const end = endOf(seg);
+    const open = seg.end === null;
+    if (end - start < 2) {
+      panel.innerHTML = `<div class="merge-empty">这一段太短，至少要有 1 分钟才能再切。</div>`;
+      return;
+    }
+    const cut = Math.min(Math.max(state.cut, start + 1), end - 1);
+    state.cut = cut;
+    const count = end - start - 1;
+    const rows = [];
+    for (let i = 0; i < count; i++) {
+      const m = start + 1 + i;
+      const rel = m - start;
+      const className = rel % 15 === 0 ? 'fifteen' : rel % 5 === 0 ? 'five' : rel === 1 ? 'minor' : '';
+      rows.push(`<div class="wheel-row ${className}"><span class="label mono">${rel % 5 === 0 ? hm(m) : `:${pad(m % 60)}`}</span><span class="tick"></span><span class="rel mono">${rel % 15 === 0 ? `+${rel}m` : ''}</span></div>`);
+    }
+    const a = cut - start, b = end - cut;
+    panel.innerHTML = `
+      <div class="cut-readout"><div class="time mono" id="cut-time">${hm(cut)}</div><div class="durations">前 <b>${dur(a)}</b> · 后 <b>${dur(b)}</b>${open ? ' · 后段继续计时' : ''}</div></div>
+      <div class="wheel-card">
+        <div class="wheel-range"><span>${hm(start)} 开始</span><span>${open ? '现在' : hm(end)} ${open ? '' : '结束'}</span></div>
+        <div class="wheel" id="cut-wheel" role="slider" tabindex="0" aria-label="选择拆分时间" aria-valuemin="${start + 1}" aria-valuemax="${end - 1}" aria-valuenow="${cut}" aria-valuetext="${hm(cut)}">
+          <div class="wheel-fade top"></div><div class="wheel-fade bottom"></div>
+          <div class="wheel-center" id="wheel-center"></div>
+          <div class="wheel-pad"></div>
+          ${rows.join('')}
+          <div class="wheel-pad"></div>
+        </div>
+        <div class="wheel-tools">
+          <button class="step-btn" id="step-back">−1 分</button>
+          <span class="wheel-tip">上下拨动刻度<br />5 / 15 分有节拍</span>
+          <button class="step-btn" id="step-fwd">+1 分</button>
+        </div>
+      </div>
+      <div class="parts">
+        <div class="parts-head"><span class="tiny">拆分预览</span><span class="tiny">点分类可改</span></div>
+        ${partCard(0, start, cut, seg, open ? false : false)}
+        ${partCard(1, cut, end, seg, open)}
+      </div>
+      <div class="sheet-actions">
+        <button class="btn ghost" id="cancel-edit">取消</button>
+        <button class="btn primary" id="save-split">拆成 2 段</button>
+      </div>`;
+
+    const wheel = $('cut-wheel');
+    const index = cut - start - 1;
+    wheel.scrollTop = index * ROW;
+    requestAnimationFrame(() => { wheel.scrollTop = index * ROW; });
+
+    const setCut = (next, feedbackKind) => {
+      const clamped = Math.min(Math.max(next, start + 1), end - 1);
+      if (clamped === state.cut) return;
+      state.cut = clamped;
+      const t = $('cut-time');
+      if (t) t.textContent = hm(clamped);
+      const d = document.querySelector('.durations');
+      if (d) d.innerHTML = `前 <b>${dur(clamped - start)}</b> · 后 <b>${dur(end - clamped)}</b>${open ? ' · 后段继续计时' : ''}`;
+      wheel.setAttribute('aria-valuenow', String(clamped));
+      wheel.setAttribute('aria-valuetext', hm(clamped));
+      updatePartBounds();
+      if (feedbackKind) feedback(feedbackKind);
+    };
+    wheel.addEventListener('scroll', () => {
+      const idx = Math.max(0, Math.min(count - 1, Math.round(wheel.scrollTop / ROW)));
+      const next = start + 1 + idx;
+      const old = state.cut;
+      if (next === old) return;
+      state.cut = next;
+      const t = $('cut-time');
+      if (t) t.textContent = hm(next);
+      const d = document.querySelector('.durations');
+      if (d) d.innerHTML = `前 <b>${dur(next - start)}</b> · 后 <b>${dur(end - next)}</b>${open ? ' · 后段继续计时' : ''}`;
+      wheel.setAttribute('aria-valuenow', String(next));
+      wheel.setAttribute('aria-valuetext', hm(next));
+      updatePartBounds();
+      const rel = next - start;
+      if (rel % 15 === 0) feedback('strong');
+      else if (rel % 5 === 0 && state.lastTick !== rel) { state.lastTick = rel; feedback('tick'); }
+    });
+    wheel.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const delta = e.key === 'ArrowUp' ? -1 : 1;
+        const next = state.cut + delta;
+        wheel.scrollTop = (next - start - 1) * ROW;
+        setCut(next, 'tick');
+      }
+    });
+    $('step-back').addEventListener('click', () => {
+      const next = state.cut - 1;
+      wheel.scrollTop = (next - start - 1) * ROW;
+      setCut(next, null);
+    });
+    $('step-fwd').addEventListener('click', () => {
+      const next = state.cut + 1;
+      wheel.scrollTop = (next - start - 1) * ROW;
+      setCut(next, null);
+    });
+    panel.querySelectorAll('[data-part-cat]').forEach((btn) => btn.addEventListener('click', () => {
+      const part = Number(btn.dataset.part);
+      const catId = btn.dataset.partCat;
+      state.partCats[part] = catId;
+      panel.querySelectorAll(`[data-part="${part}"]`).forEach((n) => n.setAttribute('aria-pressed', String(n.dataset.partCat === catId)));
+      feedback('tick');
+    }));
+    $('cancel-edit').addEventListener('click', closeEditor);
+    $('save-split').addEventListener('click', () => doSplit(seg));
+  }
+
+  function partCard(index, start, end, seg, open) {
+    const catId = state.partCats[index] || seg.cat;
+    return `<div class="part-card" data-part-card="${index}">
+      <div class="part-top"><span class="part-num">第 ${index + 1} 段</span><span class="part-dur">${dur(end - start)}</span><span class="part-time">${hm(start)} – ${open ? '现在' : hm(end)}</span></div>
+      <div class="cat-chips" data-part="${index}">${Object.entries(CATS).filter(([id]) => id !== 'pre-sleep' || seg.cat === 'pre-sleep').map(([id, c]) => `<button class="cat-chip" data-part-cat="${id}" data-part="${index}" aria-pressed="${catId === id}" style="--c:${c.color}"><i></i>${c.name}</button>`).join('')}</div>
+      <p class="part-note">备注沿用：${seg.note || '无'}</p>
+    </div>`;
+  }
+
+  function updatePartBounds() {
+    const seg = findSeg(state.editorId);
+    if (!seg) return;
+    const start = seg.start, end = endOf(seg), cut = state.cut;
+    const cards = panel.querySelectorAll('[data-part-card]');
+    if (cards[0]) {
+      cards[0].querySelector('.part-dur').textContent = dur(cut - start);
+      cards[0].querySelector('.part-time').textContent = `${hm(start)} – ${hm(cut)}`;
+    }
+    if (cards[1]) {
+      cards[1].querySelector('.part-dur').textContent = dur(end - cut);
+      cards[1].querySelector('.part-time').textContent = `${hm(cut)} – ${seg.end === null ? '现在' : hm(end)}`;
+    }
+  }
+
+  function doSplit(seg) {
+    const cut = state.cut;
+    if (!seg || cut <= seg.start || cut >= endOf(seg)) { showToast('请把分界点放在这一段内部'); return; }
+    const first = { ...seg, id: `${seg.id}-a-${Date.now()}`, end: cut, cat: state.partCats[0] || seg.cat };
+    const second = { ...seg, id: `${seg.id}-b-${Date.now()}`, start: cut, end: seg.end, cat: state.partCats[1] || seg.cat };
+    const idx = state.segments.findIndex((s) => s.id === seg.id);
+    state.segments.splice(idx, 1, first, second);
+    feedback('success');
+    closeEditor();
+    renderTimeline();
+    showToast(`已拆成 2 段 · ${hm(seg.start)}–${hm(cut)} / ${hm(cut)}–${seg.end === null ? '现在' : hm(seg.end)}`);
+  }
+
+  function renderMerge(seg) {
+    const { prev, next } = adjacent(seg);
+    if (!prev && !next) {
+      panel.innerHTML = `<div class="merge-empty">这一段没有可合并的相邻段。<br />暂停空档两边不能合并。</div>`;
+      return;
+    }
+    if (state.mergeDir === 'previous' && !prev) state.mergeDir = 'next';
+    if (state.mergeDir === 'next' && !next) state.mergeDir = 'previous';
+    const other = state.mergeDir === 'previous' ? prev : next;
+    const first = state.mergeDir === 'previous' ? prev : seg;
+    const second = state.mergeDir === 'previous' ? seg : next;
+    if (!other || !first || !second) return;
+    const combined = (second.end ?? state.now) - first.start;
+    const cat = catOf(state.mergeCat || seg.cat);
+    panel.innerHTML = `
+      <div class="dir-toggle" role="group" aria-label="选择合并方向">
+        <button id="dir-prev" aria-pressed="${state.mergeDir === 'previous'}" ${prev ? '' : 'disabled'}>与上一段</button>
+        <button id="dir-next" aria-pressed="${state.mergeDir === 'next'}" ${next ? '' : 'disabled'}>与下一段</button>
+      </div>
+      <div class="merge-meta"><span>合并后</span><b>${hm(first.start)} – ${second.end === null ? '现在' : hm(second.end)} · ${dur(combined)}</b></div>
+      <div class="merge-pair" id="merge-pair">
+        ${mergeCard(first, '前一段')}
+        <div class="merge-seam"></div>
+        ${mergeCard(second, '后一段')}
+      </div>
+      <p class="tiny">合并后保留两段的备注（去重），分类取下面选择的一项。</p>
+      <div class="cat-chips" style="margin-top:8px">${Object.entries(CATS).filter(([id]) => id !== 'pre-sleep' || seg.cat === 'pre-sleep').map(([id, c]) => `<button class="cat-chip" data-merge-cat="${id}" aria-pressed="${(state.mergeCat || seg.cat) === id}" style="--c:${c.color}"><i></i>${c.name}</button>`).join('')}</div>
+      <div class="slide-track" id="slide-track" role="slider" tabindex="0" aria-label="向右滑动合并" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="slide-fill" id="slide-fill"></div>
+        <div class="slide-text" id="slide-text">向右滑动合并</div>
+        <div class="slide-thumb" id="slide-thumb">›</div>
+      </div>
+      <button class="merge-fallback" id="merge-direct">没有触感？直接合并</button>
+      <div class="sheet-actions"><button class="btn ghost" id="cancel-merge">取消</button><button class="btn primary" id="merge-go">合并</button></div>`;
+    $('dir-prev')?.addEventListener('click', () => { state.mergeDir = 'previous'; state.mergeCat = null; renderMerge(seg); });
+    $('dir-next')?.addEventListener('click', () => { state.mergeDir = 'next'; state.mergeCat = null; renderMerge(seg); });
+    panel.querySelectorAll('[data-merge-cat]').forEach((btn) => btn.addEventListener('click', () => {
+      state.mergeCat = btn.dataset.mergeCat;
+      panel.querySelectorAll('[data-merge-cat]').forEach((n) => n.setAttribute('aria-pressed', String(n.dataset.mergeCat === state.mergeCat)));
+      feedback('tick');
+    }));
+    $('cancel-merge').addEventListener('click', closeEditor);
+    $('merge-direct').addEventListener('click', () => doMerge(first, second, seg));
+    $('merge-go').addEventListener('click', () => doMerge(first, second, seg));
+    attachSlide(first, second, seg);
+  }
+
+  function mergeCard(seg, label) {
+    const cat = catOf(seg.cat);
+    return `<div class="merge-card"><span class="dot" style="--cat:${cat.color};background:${cat.color}"></span><b>${label} · ${cat.name}</b><div class="t mono">${hm(seg.start)} – ${seg.end === null ? '现在' : hm(seg.end)}</div><div class="n">${seg.note || '没有备注'}</div></div>`;
+  }
+
+  function attachSlide(first, second, seg) {
+    const track = $('slide-track');
+    const thumb = $('slide-thumb');
+    const fill = $('slide-fill');
+    const text = $('slide-text');
+    const pair = $('merge-pair');
+    if (!track || !thumb) return;
+    let dragging = false;
+    let percent = 0;
+    let wasReady = false;
+    const max = () => Math.max(1, track.clientWidth - 48);
+    const set = (p) => {
+      percent = Math.max(0, Math.min(1, p));
+      thumb.style.left = `${4 + percent * max()}px`;
+      fill.style.width = `${percent * 100}%`;
+      track.setAttribute('aria-valuenow', String(Math.round(percent * 100)));
+      const ready = percent >= 0.86;
+      track.classList.toggle('ready', ready);
+      text.textContent = ready ? '松手合并' : '向右滑动合并';
+      if (pair) { pair.classList.toggle('pulled', ready); pair.style.setProperty('--pull', percent.toFixed(2)); }
+      if (ready && !wasReady) feedback('strong');
+      wasReady = ready;
+    };
+    const down = (e) => {
+      dragging = true;
+      track.setPointerCapture?.(e.pointerId);
+      const rect = track.getBoundingClientRect();
+      const x = (e.clientX ?? e.touches?.[0]?.clientX ?? rect.left) - rect.left - 24;
+      set(x / max());
+    };
+    const move = (e) => {
+      if (!dragging) return;
+      e.preventDefault?.();
+      const rect = track.getBoundingClientRect();
+      const x = (e.clientX ?? e.touches?.[0]?.clientX ?? rect.left) - rect.left - 24;
+      set(x / max());
+    };
+    const up = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (percent >= 0.86) doMerge(first, second, seg);
+      else { set(0); feedback('tick'); }
+    };
+    track.addEventListener('pointerdown', down);
+    track.addEventListener('pointermove', move);
+    track.addEventListener('pointerup', up);
+    track.addEventListener('pointercancel', up);
+    track.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); set(percent + 0.2); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); set(percent - 0.2); }
+      if (e.key === 'Enter' && percent >= 0.86) doMerge(first, second, seg);
+    });
+  }
+
+  function doMerge(first, second, seg) {
+    const cat = state.mergeCat || seg.cat;
+    const notes = [...new Set([first.note, second.note].filter((n) => n && n.trim()))].join('\n');
+    const merged = { id: `${first.id}-m-${Date.now()}`, start: first.start, end: second.end, cat, note: notes };
+    state.segments = state.segments.filter((s) => s.id !== first.id && s.id !== second.id);
+    state.segments.push(merged);
+    feedback('success');
+    closeEditor();
+    renderTimeline();
+    showToast(`已合并 · ${hm(first.start)}–${merged.end === null ? '现在' : hm(merged.end)}`);
+  }
+
+  function lap() {
+    const open = state.segments.find((s) => s.end === null);
+    if (!open) { showToast('没有进行中的段'); return; }
+    if (state.now - open.start < 1) { showToast('已经刚计过次了'); return; }
+    open.end = state.now;
+    state.now += 1;
+    state.segments.push({ id: `lap-${Date.now()}`, start: open.end, end: null, cat: 'unclassified', note: '' });
+    state.laps += 1;
+    feedback('success');
+    const btn = $('lap-btn');
+    btn.classList.remove('pulse'); void btn.offsetWidth; btn.classList.add('pulse');
+    renderTimeline();
+    showToast(`已计次 · ${hm(open.end)} · 可点这一段补备注`);
+  }
+
+  // 外层事件
+  $('sound-toggle').addEventListener('click', () => {
+    state.sound = !state.sound;
+    $('sound-toggle').setAttribute('aria-pressed', String(state.sound));
+    $('sound-toggle').setAttribute('aria-label', state.sound ? '关闭操作音效' : '开启操作音效');
+    if (state.sound) feedback('tick');
+  });
+  $('editor-close').addEventListener('click', closeEditor);
+  mask.addEventListener('click', (e) => { if (e.target === mask) closeEditor(); });
+  $('tab-split').addEventListener('click', () => { state.tab = 'split'; renderEditor(); });
+  $('tab-merge').addEventListener('click', () => { state.tab = 'merge'; state.mergeCat = findSeg(state.editorId)?.cat ?? null; renderEditor(); });
+  $('lap-btn').addEventListener('click', lap);
+  document.querySelectorAll('.tab[data-tab]').forEach((btn) => btn.addEventListener('click', () => showToast(`${btn.dataset.tab}页在本预览里未展开`)));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.editorId) closeEditor(); });
+
+  renderTimeline();
+})();
+</script>
+</body>
+</html>

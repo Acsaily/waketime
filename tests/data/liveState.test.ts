@@ -16,6 +16,10 @@ function seg(id: string, startOffsetMin: number, endOffsetMin: number | null, no
   };
 }
 
+function catSeg(id: string, startOffsetMin: number, endOffsetMin: number | null, category: string, note = ''): TimerSegment {
+  return { ...seg(id, startOffsetMin, endOffsetMin, note), category: category as TimerSegment['category'] };
+}
+
 function liveOf(segments: TimerSegment[], sessionId = 'session-1', status: 'running' | 'ended' = 'running'): LiveState {
   return {
     cycleId: '2026-10-26',
@@ -78,6 +82,49 @@ describe('applyLiveState（修复历史页重复段）', () => {
     const segments = data.cycles[0].session!.segments;
     expect(segments.map((s) => s.id)).toEqual(['a', 'b', 'c', 'd']);
     expect(data.cycles[0].session!.id).toBe('session-2');
+  });
+});
+
+describe('applyLiveState（开启第二天时标记睡前时间）', () => {
+  const newCycle = (sleepOffsetMin: number): LiveState => ({
+    cycleId: '2026-10-27',
+    sleepAtMs: T0 + sleepOffsetMin * 60_000,
+    wakeAtMs: T0 + (sleepOffsetMin + 8 * 60) * 60_000,
+    targetAtMs: T0 + (sleepOffsetMin + 24 * 60) * 60_000,
+    status: 'running',
+    sessionId: 'session-2',
+    sessionStartedAtMs: T0 + (sleepOffsetMin + 8 * 60) * 60_000,
+    notificationsEnabled: true,
+    clockAnomaly: false,
+    segments: [{ id: 'next-1', seq: 1, startAtMs: T0 + (sleepOffsetMin + 8 * 60) * 60_000, endAtMs: 0, note: '', source: 'app' }],
+  });
+  const closed = (segments: TimerSegment[], bedtimeMin: number) => {
+    let data = applyLiveState(defaultData(), liveOf(segments), T0 + bedtimeMin * 60_000);
+    data = applyLiveState(data, newCycle(bedtimeMin), T0 + (bedtimeMin + 1) * 60_000);
+    return data.cycles.find((c) => c.id === '2026-10-26')!;
+  };
+
+  it('最后一次计次的开放尾段变成睡前时间（待分配）并封口在入睡时刻', () => {
+    const old = closed([catSeg('a', 0, 10, 'work'), catSeg('b', 10, null, 'unclassified', '刷手机')], 360);
+    const b = old.session!.segments.find((s) => s.id === 'b')!;
+    expect(b).toMatchObject({ endAtMs: T0 + 360 * 60_000, category: 'pre-sleep' });
+    expect(b.note).toBe('刷手机');
+    expect(old.closedAtMs).toBe(T0 + 360 * 60_000);
+    expect(old.session!.status).toBe('ended');
+    expect(old.session!.segments.find((s) => s.id === 'a')).toMatchObject({ endAtMs: T0 + 10 * 60_000, category: 'work' });
+  });
+
+  it('已标过类别的开放尾段、非尾部的未分类段都不改', () => {
+    const old = closed([catSeg('a', 0, 10, 'unclassified'), catSeg('b', 10, 30, 'daily'), catSeg('c', 30, null, 'work')], 360);
+    expect(old.session!.segments.map((s) => s.category)).toEqual(['unclassified', 'daily', 'work']);
+  });
+
+  it('多个开放段时只标记最晚开始的那一段', () => {
+    const old = closed([seg('a', 0, null), seg('b', 20, null)], 360);
+    const byId = new Map(old.session!.segments.map((s) => [s.id, s]));
+    expect(byId.get('a')?.category).toBe('unclassified');
+    expect(byId.get('b')?.category).toBe('pre-sleep');
+    expect(byId.get('a')?.endAtMs).toBe(T0 + 360 * 60_000);
   });
 });
 

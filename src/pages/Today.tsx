@@ -9,12 +9,14 @@ import { screenshotUrl } from '../data/files';
 import { deriveTimerDisplay, formatClock, formatDuration, formatHuman } from '../core/time';
 import { categoryOf, summarizeCycle } from '../core/segments';
 import { wakeDateOf } from '../core/trends';
+import { feedback } from '../core/feedback';
 
 export function Today({ api }: { api: AppApi }) {
   const { live, data, now, error } = api;
   const [sleepOpen, setSleepOpen] = useState(false);
   const [editor, setEditor] = useState<{ cycleId: string; segment: Segment; afterLap: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [lapPulse, setLapPulse] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
   const locked = useRef(false);
   const [shotUrl, setShotUrl] = useState<string | null>(null);
@@ -78,6 +80,8 @@ export function Today({ api }: { api: AppApi }) {
     const cycleId = live.cycleId;
     void perform('计次', async () => {
       const state = await api.lap('');
+      feedback(data.settings, 'lap');
+      setLapPulse((n) => n + 1);
       const ended = state.segments.filter((s) => s.endAtMs > 0).slice(-1)[0];
       if (ended) setEditor({ cycleId, segment: ended, afterLap: true });
     });
@@ -138,7 +142,7 @@ export function Today({ api }: { api: AppApi }) {
 
       <div className={`stopwatch-card ${napping ? 'napping' : ''}`}>
         <div className="section-head"><span className="card-label">实际清醒（不含补觉）</span>{napping ? <span className="nap-status" role="status">补觉中 · 秒表暂停</span> : null}</div>
-        <div className="stopwatch-value">{formatDuration(totals?.awakeMs ?? timer?.sinceWakeMs ?? 0)}</div>
+        <div className="stopwatch-value" key={lapPulse}>{formatDuration(totals?.awakeMs ?? timer?.sinceWakeMs ?? 0)}</div>
         <div className="stopwatch-actions">
           {running ? napping ? (
             <button className="btn primary block" disabled={busy} onClick={() => void perform('结束补觉', api.endNap)}>结束补觉</button>
@@ -171,6 +175,7 @@ export function Today({ api }: { api: AppApi }) {
         categories={data.settings.categories}
         onSave={(patch) => api.updateSegment(editor.cycleId, editor.segment.id, patch)}
         onMerge={(firstId, secondId, category) => api.mergeSegments(editor.cycleId, firstId, secondId, category)}
+        prefs={data.settings}
       /> : null}
       {shotOpen && shotUrl ? <div className="shot-mask" role="dialog" aria-label="睡眠截图" onClick={() => setShotOpen(false)}><img src={shotUrl} alt="小米睡眠截图" onClick={(e) => e.stopPropagation()} /><button className="btn ghost" onClick={() => setShotOpen(false)}>关闭截图</button></div> : null}
       {error ? <p className="error" role="alert">{error}</p> : null}
