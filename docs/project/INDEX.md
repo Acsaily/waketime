@@ -17,6 +17,8 @@ v0.6.0 历史页已改为「周趋势 / 每日明细」两块面板并同签名�
 
 2026-11-16 实施 v0.8.0：分类颜色可改、删除标签不删记录、标签分大类/小类（最多两级）、统计页按大类/细分切换并可下钻；schema 2→3。本机 115 用例、类型检查与构建通过；真机 Redmi Note 12 Turbo 同签名覆盖安装后 21 周期 / 180 段逐段 0 变化，正式包已装回。实现记录 `docs/outcomes/2026-11-16-v080-category-hierarchy.md`。
 
+2026-11-17 v0.8.1：今日页分类汇总块改为大类合计，点大类下钻看细分，点框内任意处返回大类；导出页保持完整路径汇总。本机 118 用例、类型检查与构建通过，浏览器块级验证通过；真机 Redmi Note 12 Turbo 覆盖安装后 22 周期 / 187 段逐段 0 变化，正式包已装回。记录 `docs/outcomes/2026-11-17-v081-today-summary-drilldown.md`。
+
 ## Sources of truth
 
 - 当前状态：`docs/project/STATUS.md`
@@ -27,7 +29,7 @@ v0.6.0 历史页已改为「周趋势 / 每日明细」两块面板并同签名�
 - 实施计划：`docs/superpowers/plans/2026-10-26-waketime-app.md`
 - GPT 协作记录：`docs/gpt-ds/`
 - 真机证据：`docs/shots/`、`docs/backup-from-phone/`
-- 交付物：仓库根目录 `waketime-<version>-release.apk`（当前 0.1.0 ~ 0.8.0）
+- 交付物：仓库根目录 `waketime-<version>-release.apk`（当前 0.1.0 ~ 0.8.1）
 
 ## 代码地图
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { AppApi } from '../state/useApp';
 import { SleepDialog, type SleepFormValue } from '../components/SleepDialog';
 import { SegmentEditor } from '../components/SegmentEditor';
-import { CycleSummary } from '../components/CycleSummary';
+import { TodayCategorySummary } from '../components/TodayCategorySummary';
 import { Timeline } from '../components/Timeline';
 import type { Segment } from '../data/store';
 import { screenshotUrl } from '../data/files';
@@ -157,7 +157,7 @@ export function Today({ api }: { api: AppApi }) {
         {actionError ? <p className="error" role="alert">{actionError}</p> : null}
       </div>
 
-      {totals ? <CycleSummary totals={totals} categories={data.settings.categories} /> : null}
+      {totals ? <TodayCategorySummary totals={totals} categories={data.settings.categories} /> : null}
 
       {pendingNotes.length > 0 ? <button className="pending-note" disabled={busy} onClick={() => onEditSegment(pendingNotes[pendingNotes.length - 1])}>通知栏有 {pendingNotes.length} 段还没写备注，点这里补分类与备注</button> : null}
       <div className="section">

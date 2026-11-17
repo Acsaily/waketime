@@ -59,6 +59,74 @@ export interface CategoryEntry {
   parentBucket?: boolean;
 }
 
+/** 今日页汇总块的一行。 */
+export interface SummaryRow {
+  id: string;
+  label: string;
+  ms: number;
+  archived: boolean;
+  /** 大类名下有小标签，可下钻查看细分。 */
+  drillable: boolean;
+  /** 大类自身的时间桶（未细分）。 */
+  parentBucket: boolean;
+}
+
+/**
+ * 今日页汇总：默认只看大类（含下属小标签的时间），给 parentId 时只看该大类内部的细分。
+ * 按分类目录顺序排列，时间变动时行序不跳动；未分类即使为 0 也保留，其余零时长项隐藏。
+ */
+export function summaryRows(
+  categoryMs: Record<string, number>,
+  categories: CategoryDefinition[],
+  parentId: string | null = null,
+): SummaryRow[] {
+  const archivedSuffix = (archived: boolean) => (archived ? '（已停用）' : '');
+  if (!parentId) {
+    const rows: SummaryRow[] = [];
+    for (const cat of categories.filter((c) => !c.parentId)) {
+      if (cat.id === 'sleep') continue;
+      const children = childrenOf(categories, cat.id);
+      const ms = (categoryMs[cat.id] ?? 0) + children.reduce((sum, c) => sum + (categoryMs[c.id] ?? 0), 0);
+      if (ms <= 0 && cat.id !== 'unclassified') continue;
+      rows.push({
+        id: cat.id,
+        label: `${cat.name}${archivedSuffix(cat.archived)}`,
+        ms,
+        archived: cat.archived,
+        drillable: children.length > 0,
+        parentBucket: false,
+      });
+    }
+    return rows;
+  }
+  const parent = categories.find((c) => c.id === parentId);
+  const rows: SummaryRow[] = [];
+  const own = categoryMs[parentId] ?? 0;
+  if (own > 0) {
+    rows.push({
+      id: parentId,
+      label: `${parent?.name ?? categoryName(parentId, categories)}（未细分）`,
+      ms: own,
+      archived: parent?.archived ?? false,
+      drillable: false,
+      parentBucket: true,
+    });
+  }
+  for (const child of childrenOf(categories, parentId)) {
+    const ms = categoryMs[child.id] ?? 0;
+    if (ms <= 0) continue;
+    rows.push({
+      id: child.id,
+      label: `${child.name}${archivedSuffix(child.archived)}`,
+      ms,
+      archived: child.archived,
+      drillable: false,
+      parentBucket: false,
+    });
+  }
+  return rows;
+}
+
 const DAY = 86_400_000;
 
 function dayIndex(ms: number): number {

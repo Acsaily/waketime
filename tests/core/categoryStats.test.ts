@@ -4,7 +4,7 @@ import { changeCategories, defaultCategories, PRE_SLEEP_CATEGORY } from '../../s
 import { buildDayMetrics } from '../../src/core/history';
 import {
   buildCategoryDayTotals, buildCategoryPeriod, canNextPeriod, canPrevPeriod,
-  categoryEntries, entryBucketMs, percentMap, shiftPeriod,
+  categoryEntries, entryBucketMs, percentMap, shiftPeriod, summaryRows,
 } from '../../src/core/categoryStats';
 import { H, cycle } from '../fixtures';
 
@@ -145,5 +145,31 @@ describe('v0.8 大类与细分统计', () => {
     expect(entryBucketMs(bucket.categoryMs, { id: 'work' }, 'parent', catalog)).toBe(3 * H);
     expect(entryBucketMs(bucket.categoryMs, { id: 'daily' }, 'child', catalog)).toBe(H);
     expect(entryBucketMs(bucket.categoryMs, { id: 'work' }, 'child', catalog)).toBe(2 * H);
+  });
+});
+
+describe('今日页分类汇总块', () => {
+  const catalog = changeCategories(
+    changeCategories(defaultCategories(), { kind: 'add', id: 'cat-jp', name: '学日语', parentId: 'work' }, new Set()),
+    { kind: 'add', id: 'cat-mech', name: '机械', parentId: 'work' },
+    new Set(),
+  );
+
+  it('顶层只列大类：小标签时间并入大类，零时长隐藏，未分类保留', () => {
+    const rows = summaryRows({ work: H, 'cat-jp': 2 * H, daily: 3 * H }, catalog);
+    expect(rows.map((r) => [r.id, r.ms])).toEqual([['work', 3 * H], ['daily', 3 * H], ['unclassified', 0]]);
+    expect(rows[0]).toMatchObject({ label: '工作', drillable: true });
+    expect(rows[1]).toMatchObject({ label: '日常', drillable: false });
+  });
+
+  it('下钻只看该大类细分：未细分桶在前，零时长小标签隐藏，顺序跟目录', () => {
+    const rows = summaryRows({ work: H, 'cat-jp': 2 * H, daily: 3 * H }, catalog, 'work');
+    expect(rows.map((r) => [r.label, r.ms])).toEqual([['工作（未细分）', H], ['学日语', 2 * H]]);
+    expect(rows[0]).toMatchObject({ parentBucket: true, drillable: false });
+  });
+
+  it('没有自身时间的下钻不出现未细分桶', () => {
+    const rows = summaryRows({ 'cat-mech': 4 * H }, catalog, 'work');
+    expect(rows.map((r) => r.label)).toEqual(['机械']);
   });
 });
