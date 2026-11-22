@@ -14,6 +14,7 @@ export function CategoryManager({ api }: { api: AppApi }) {
   const [colorTarget, setColorTarget] = useState<string | null>(null);
   const [move, setMove] = useState<{ id: string; parentId: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
   const locked = useRef(false);
   const nameInput = useRef<HTMLInputElement>(null);
@@ -98,17 +99,27 @@ export function CategoryManager({ api }: { api: AppApi }) {
     </div>
   </div> : null;
 
-  const row = (c: CategoryDefinition, child: boolean) => <div className={`category-management-row ${child ? 'category-child-row' : ''}`} key={c.id}>
+  const row = (c: CategoryDefinition, child: boolean) => {
+    const kids = child ? 0 : activeChildren(c.id).length;
+    const collapsedHere = collapsed[c.id] === true;
+    return <div className={`category-management-row ${child ? 'category-child-row' : ''}`} key={c.id}>
     {editing === c.id ? renameEditor(c) : <>
       <strong className="category-name">
         {colorDot(c)}
+        {kids > 0 ? <button
+          type="button" className="category-collapse"
+          aria-expanded={!collapsedHere}
+          aria-label={`${collapsedHere ? '展开' : '收起'}${c.name}的小标签`}
+          disabled={busy}
+          onClick={() => setCollapsed((current) => ({ ...current, [c.id]: !current[c.id] }))}
+        >{collapsedHere ? '▸' : '▾'}</button> : null}
         <span>{c.name}</span>
         {child ? <span className="category-child-tag">小标签</span> : null}
-        {!child && activeChildren(c.id).length > 0 ? <span className="category-child-count">{activeChildren(c.id).length} 个小标签</span> : null}
+        {kids > 0 ? <span className="category-child-count">{kids} 个小标签</span> : null}
       </strong>
       {colorTarget === c.id ? colorPalette(c) : null}
       <div className="category-row-actions">
-        {!child ? <button className="chip" disabled={busy} onClick={() => { setParentForNew(c.id); setName(''); setMessage(null); nameInput.current?.focus(); }}>+ 小标签</button> : null}
+        {!child ? <button className="chip" disabled={busy} onClick={() => { setParentForNew(c.id); setName(''); setMessage(null); setCollapsed((current) => ({ ...current, [c.id]: false })); nameInput.current?.focus(); }}>+ 小标签</button> : null}
         <button className="chip" aria-label={`修改${c.name}的归属`} disabled={busy} onClick={() => setMove({ id: c.id, parentId: c.parentId ?? '' })}>{child ? '换大类' : '归大类'}</button>
         <button className="chip" aria-label={`上移${c.name}`} disabled={busy || isFirstSibling(c)} onClick={() => void perform({ kind: 'up', id: c.id }, '顺序已保存')}>上移</button>
         <button className="chip" aria-label={`下移${c.name}`} disabled={busy || isLastSibling(c)} onClick={() => void perform({ kind: 'down', id: c.id }, '顺序已保存')}>下移</button>
@@ -120,6 +131,7 @@ export function CategoryManager({ api }: { api: AppApi }) {
     </>}
     {moveEditor(c)}
   </div>;
+  };
 
   return <section className="section category-manager" aria-busy={busy}>
     <div className="section-head"><span>分类管理</span><span className="small muted">大类 → 小标签，最多两级</span></div>
@@ -151,7 +163,7 @@ export function CategoryManager({ api }: { api: AppApi }) {
       </div> : null}
       {topUsers.map((parent) => <div className="category-group" key={parent.id}>
         {row(parent, false)}
-        {activeChildren(parent.id).map((child) => row(child, true))}
+        {collapsed[parent.id] === true ? null : activeChildren(parent.id).map((child) => row(child, true))}
       </div>)}
     </div>
     <p className="tiny">未分类用于兜底，补觉用于睡眠计算，睡前时间由系统在开启第二天时标记；这三个系统标签不能当小标签。有大类的小标签被删除后仍保留原来的大类，历史显示不会丢。</p>

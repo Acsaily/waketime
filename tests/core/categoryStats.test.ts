@@ -59,6 +59,7 @@ describe('分类统计聚合', () => {
     expect(period.ongoing).toBe(true);
     expect(period.recordedDays).toBe(2);
     expect(period.totalMs).toBe(6.5 * H);
+    expect(period.sleepMs).toBe(17 * H); // 11/9 主睡眠 8h + 11/10 主睡眠 8h + 补觉 1h
     expect(period.totals).toMatchObject({ work: 5 * H, daily: H, [PRE_SLEEP_CATEGORY]: 0.5 * H });
     expect(period.previousTotals).toMatchObject({ work: H });
     expect(period.previousTotalMs).toBe(H);

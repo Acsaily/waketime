@@ -8,7 +8,7 @@
 
 - 公开仓库：<https://github.com/Acsaily/waketime>
 - 最新 APK：<https://github.com/Acsaily/waketime/releases/latest>
-- Android 7.0+（minSdk 24）。把 APK 传到手机点安装，或 `adb install -r waketime-0.8.1-release.apk`。
+- Android 7.0+（minSdk 24）。把 APK 传到手机点安装，或 `adb install -r waketime-0.9.0-release.apk`。
 - 如果手机上已有另一个签名的同包名版本，Android 不允许覆盖；需先导出备份、卸载旧版，再安装。
 
 ## 现在有什么

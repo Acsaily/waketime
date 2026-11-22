@@ -18,6 +18,8 @@ export type StatsLevel = 'parent' | 'child';
 export interface CategoryDayTotal {
   categoryMs: Record<string, number>;
   totalMs: number;
+  /** 当天所有周期的总睡眠（含补觉）。 */
+  sleepMs: number;
 }
 
 export interface CategoryBucket {
@@ -39,6 +41,8 @@ export interface CategoryPeriod {
   buckets: CategoryBucket[];
   totals: Record<string, number>;
   totalMs: number;
+  /** 本期的总睡眠（含补觉），用于和清醒时间对照。 */
+  sleepMs: number;
   recordedDays: number;
   previousTotals: Record<string, number>;
   previousTotalMs: number;
@@ -150,8 +154,8 @@ function totalOf(categoryMs: Record<string, number>): number {
 export function buildCategoryDayTotals(days: Map<string, DayMetric>, nowMs: number): Map<string, CategoryDayTotal> {
   const out = new Map<string, CategoryDayTotal>();
   for (const [key, day] of days) {
-    const categoryMs = summarizeDay(day, nowMs).categoryMs;
-    out.set(key, { categoryMs, totalMs: totalOf(categoryMs) });
+    const summary = summarizeDay(day, nowMs);
+    out.set(key, { categoryMs: summary.categoryMs, totalMs: totalOf(summary.categoryMs), sleepMs: summary.totalSleepMs });
   }
   return out;
 }
@@ -163,6 +167,15 @@ function rangeTotals(dayTotals: Map<string, CategoryDayTotal>, startMs: number, 
     if (day) sumCategoryMs(out, day.categoryMs);
   }
   return out;
+}
+
+function rangeSleepMs(dayTotals: Map<string, CategoryDayTotal>, startMs: number, endMs: number): number {
+  let sum = 0;
+  for (let ms = startOfLocalDayMs(startMs); ms <= endMs; ms = addLocalDaysMs(ms, 1)) {
+    const day = dayTotals.get(dateKeyOfMs(ms));
+    if (day) sum += day.sleepMs;
+  }
+  return sum;
 }
 
 function dayBucket(dayTotals: Map<string, CategoryDayTotal>, ms: number, label?: string): CategoryBucket {
@@ -263,6 +276,7 @@ export function buildCategoryPeriod(
   return {
     mode, startMs, endMs, label, prevLabel, ongoing, buckets, totals,
     totalMs: totalOf(totals),
+    sleepMs: rangeSleepMs(dayTotals, startMs, endMs),
     recordedDays,
     previousTotals,
     previousTotalMs: totalOf(previousTotals),

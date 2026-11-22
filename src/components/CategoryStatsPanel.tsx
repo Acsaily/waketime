@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Segment } from '../data/store';
 import type { CategoryDefinition } from '../core/categories';
 import type { CategoryEntry, CategoryPeriod, StatsLevel, StatsView } from '../core/categoryStats';
@@ -192,12 +193,25 @@ export function CategoryStatsPanel({
     : null;
   const drillParent = drillParentId ? categories.find((c) => c.id === drillParentId) : null;
   const shareTitle = level === 'parent' ? '大类占比' : drillParent ? `${drillParent.name}的细分占比` : '细分占比';
+  const [overviewOpen, setOverviewOpen] = useState(false);
+  const ratioTotal = period.totalMs + period.sleepMs;
+  const awakePct = ratioTotal > 0 ? Math.round(period.totalMs / ratioTotal * 100) : null;
+  const sleepPct = awakePct === null ? null : 100 - awakePct;
+  const toggleOverview = () => setOverviewOpen((open) => !open);
 
   return <>
-    <section className="section stats-overview">
+    <section
+      className={`section stats-overview${overviewOpen ? ' is-open' : ''}`}
+      role="button"
+      tabIndex={0}
+      aria-expanded={overviewOpen}
+      aria-label="总清醒时间，点击展开睡眠时间与清醒睡眠比例"
+      onClick={toggleOverview}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOverview(); } }}
+    >
       <div className="stats-total-row">
         <div>
-          <p className="tiny">总清醒时间</p>
+          <p className="tiny">总清醒时间 <em className="stats-expand-hint">{overviewOpen ? '收起' : '展开'}</em></p>
           <p className="stats-total">{formatHuman(period.totalMs)}</p>
         </div>
         <div className="stats-total-side">
@@ -205,8 +219,17 @@ export function CategoryStatsPanel({
           <span>
             {delta === null ? `${period.prevLabel}无记录` : `较${period.prevLabel} ${delta >= 0 ? '↑' : '↓'}${Math.abs(delta)}%`}
           </span>
+          <span className="stats-expand-caret" aria-hidden="true">{overviewOpen ? '▴' : '▾'}</span>
         </div>
       </div>
+      {overviewOpen ? <div className="stats-overview-extra">
+        <div className="stats-overview-fact"><span>总睡眠时间</span><b>{formatHuman(period.sleepMs)}</b></div>
+        <div className="stats-overview-fact"><span>清醒 : 睡眠</span><b>{awakePct === null ? '—' : `${awakePct}% : ${sleepPct}%`}</b></div>
+        {awakePct === null ? null : <div className="stats-split-bar" aria-hidden="true">
+          <i className="awake" style={{ flexGrow: awakePct }} />
+          <i className="sleep" style={{ flexGrow: sleepPct ?? 0 }} />
+        </div>}
+      </div> : null}
       <p className="tiny">按起床日归档；补觉和主睡眠不计入分类。{period.ongoing ? '本期仍在进行。' : ''}</p>
     </section>
 

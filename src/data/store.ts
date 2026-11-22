@@ -12,7 +12,7 @@ const TMP_FILE = 'waketime/data.tmp.json';
 const PREV_FILE = 'waketime/data.prev.json';
 const BACKUP_DIR = 'waketime/backups';
 const LS_KEY = 'waketime.data';
-export const APP_VERSION = '0.8.1';
+export const APP_VERSION = '0.9.0';
 
 export interface Segment extends TimerSegment {}
 
