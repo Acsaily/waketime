@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { uniqueCycleId } from '../../src/core/cycleIds';
+import { uniqueCycleId } from '../../src/modules/time-tracking/index';
 
 describe('周期 ID 去重', () => {
   it('日期不存在时直接使用', () => {

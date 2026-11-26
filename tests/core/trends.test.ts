@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { deriveTimerDisplay, formatDuration } from '../../src/core/time';
-import { buildTrend, summarizeTrend, trendWindow } from '../../src/core/trends';
-import type { Cycle } from '../../src/data/store';
+import { deriveTimerDisplay, formatDuration } from '../../src/modules/time-tracking/index';
+import { buildTrend, summarizeTrend, trendWindow } from '../../src/modules/analytics/index';
+import type { Cycle } from '../../src/modules/time-tracking/index';
 
 const base = new Date(2026, 9, 26, 0, 0, 0).getTime(); // 10-26 00:00
 

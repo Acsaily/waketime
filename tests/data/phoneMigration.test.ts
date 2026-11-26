@@ -1,28 +1,96 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { parseDataText } from '../../src/data/store';
-import { readRestoreBackup, buildRestoredData } from '../../src/data/restore';
-import { buildBackupJson } from '../../src/export/format';
-import { defaultData } from '../../src/data/store';
+import { readFileSync } from 'node:fs';
+import { isAbsolute } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { parseDataText, defaultData, type AppData } from '../../src/application/index';
+import {
+  readRestoreBackup,
+  buildRestoredData,
+  categoryConflicts,
+} from '../../src/application/index';
+import { buildBackupJson } from '../../src/application/index';
+import { N, golden, schemas } from '../fixtures/synthetic';
 
-const path = resolve('docs/backup-from-phone/pre-v050-20261106/data-before-v050.json');
-describe.skipIf(!existsSync(path))('本次真机备份的隔离迁移与恢复（不回写手机）', () => {
-  it('逐段保留所有原 ID、毫秒边界、备注、类别与来源', () => {
-    const text = readFileSync(path, 'utf8'); const raw = JSON.parse(text);
-    const migrated = parseDataText(text)!;
-    expect(migrated.schemaVersion).toBe(3); expect(migrated.cycles.length).toBe(raw.cycles.length);
-    for (const c of raw.cycles) {
-      const next = migrated.cycles.find((n) => n.id === c.id)!;
-      expect(next.sleepAtMs).toBe(c.sleepAtMs); expect(next.wakeAtMs).toBe(c.wakeAtMs);
-      for (const s of c.session?.segments ?? []) {
-        const after = next.session!.segments.find((n) => n.id === s.id)!;
-        expect(after).toMatchObject({ id: s.id, startAtMs: s.startAtMs, endAtMs: s.endAtMs,
-          note: s.note, category: s.category ?? 'unclassified', source: s.source });
+// Keep the original phone migration assertions, using synthetic schema 1/2/3
+// by default. Private opt-in uses boolean comparisons to avoid diffing personal values.
+function verifyMigration(text: string): void {
+  const raw = JSON.parse(text) as AppData;
+  const migrated = parseDataText(text);
+  expect(migrated !== null, 'migration accepted').toBe(true);
+  if (!migrated) return;
+  expect(migrated.schemaVersion, 'schema').toBe(3);
+  expect(migrated.cycles.length, 'cycle count').toBe(raw.cycles.length);
+  for (const c of raw.cycles) {
+    const next = migrated.cycles.find((n) => n.id === c.id);
+    expect(next !== undefined, 'cycle identity retained').toBe(true);
+    expect(next?.sleepAtMs === c.sleepAtMs, 'sleep boundary retained').toBe(true);
+    expect(next?.wakeAtMs === c.wakeAtMs, 'wake boundary retained').toBe(true);
+    for (const s of c.session?.segments ?? []) {
+      const after = next?.session?.segments.find((n) => n.id === s.id);
+      expect(after !== undefined, 'segment identity retained').toBe(true);
+      for (const key of ['id', 'startAtMs', 'endAtMs', 'note', 'source', 'splitFromId'] as const) {
+        expect(isDeepStrictEqual(after?.[key], s[key]), `segment ${key} retained`).toBe(true);
       }
+      expect(after?.category === (s.category ?? 'unclassified'), 'category retained').toBe(true);
     }
-    const restored = buildRestoredData(defaultData(), readRestoreBackup(JSON.parse(buildBackupJson(migrated.cycles, migrated.settings))), 'overwrite');
-    expect(restored.cycles).toEqual(migrated.cycles); expect(restored.settings.categories).toEqual(migrated.settings.categories);
-    expect(readFileSync(path, 'utf8')).toBe(text);
+  }
+  const backup = readRestoreBackup(JSON.parse(buildBackupJson(migrated.cycles, migrated.settings)));
+  const local = defaultData();
+  const resolutions = Object.fromEntries(
+    categoryConflicts(local.settings.categories, backup.categories).map((c) => [
+      c.id,
+      'backup' as const,
+    ]),
+  );
+  const restored = buildRestoredData(local, backup, 'overwrite', resolutions);
+  expect(
+    isDeepStrictEqual(
+      restored.cycles,
+      [...migrated.cycles].sort((a, b) => b.wakeAtMs - a.wakeAtMs),
+    ),
+    'restored cycles',
+  ).toBe(true);
+  expect(
+    isDeepStrictEqual(restored.settings.categories, migrated.settings.categories),
+    'restored catalog',
+  ).toBe(true);
+}
+
+afterEach(() => vi.useRealTimers());
+describe('合成备份的隔离迁移与恢复', () => {
+  it.each(schemas.map((schema, i) => ({ schema, version: i + 1 })))(
+    'schema $version 原 ID、边界、备注、类别、来源、谱系不丢失',
+    ({ schema }) => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(N);
+      verifyMigration(JSON.stringify(schema));
+    },
+  );
+  it('schema 3 规范记录逐字段保留', () => {
+    const data = golden();
+    expect(parseDataText(JSON.stringify(data))).toEqual(data);
+  });
+});
+
+const path = process.env.WAKETIME_PHONE_BACKUP;
+describe.skipIf(!path)('显式指定的本地私人备份（不回写）', () => {
+  it('逐记录迁移及恢复', () => {
+    if (!path || !isAbsolute(path))
+      throw new Error('WAKETIME_PHONE_BACKUP must be an absolute local path');
+    const now = Number(process.env.WAKETIME_AS_OF_MS);
+    if (!Number.isSafeInteger(now) || now <= 0)
+      throw new Error('WAKETIME_AS_OF_MS must be an explicit epoch');
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(now);
+    // Do not include input values, paths or underlying parser errors in test output.
+    try {
+      const text = readFileSync(path, 'utf8');
+      verifyMigration(text);
+      expect(readFileSync(path, 'utf8') === text, 'original unchanged').toBe(true);
+    } catch {
+      throw new Error(
+        'Private backup migration/read-only/restore check failed; use the aggregate-only differential runner for diagnosis',
+      );
+    }
   });
 });

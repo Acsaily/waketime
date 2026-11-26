@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Cycle } from '../../src/data/store';
+import type { Cycle } from '../../src/modules/time-tracking/index';
 import {
   buildDayMetrics,
   buildMonthView,
@@ -9,10 +9,11 @@ import {
   formatWeekRange,
   summarizeDay,
   weekStats,
-} from '../../src/core/history';
+} from '../../src/modules/analytics/index';
 
 const H = 3_600_000;
-const local = (y: number, m: number, d: number, h = 0, min = 0) => new Date(y, m - 1, d, h, min).getTime();
+const local = (y: number, m: number, d: number, h = 0, min = 0) =>
+  new Date(y, m - 1, d, h, min).getTime();
 
 function cycle(id: string, sleepAtMs: number, wakeAtMs: number): Cycle {
   const sleepDurationMs = wakeAtMs - sleepAtMs;

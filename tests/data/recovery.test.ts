@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseDataText, pickRecoveredData, rejectFutureSchema } from '../../src/data/store';
+import { parseDataText, pickRecoveredData, rejectFutureSchema } from '../../src/application/index';
 
 const goodPayload = (id: string) =>
   JSON.stringify({

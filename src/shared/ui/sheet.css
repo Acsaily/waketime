@@ -1,0 +1,92 @@
+/* ---------- 底部弹层 ---------- */
+
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+  z-index: 30;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  padding: 10px 16px calc(18px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: #39414f;
+  margin: 4px auto 10px;
+}
+
+.sheet-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sheet-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  padding: 0 4px 10px;
+}
+
+.sheet-actions .btn {
+  flex: 1;
+}
+
+.sheet {
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-bottom: 20px;
+}
+
+.sheet-head {
+  gap: 12px;
+}
+
+.sheet-close {
+  min-width: 44px;
+  padding: 0;
+  margin-top: -8px;
+}
+
+.editor-fields {
+  border: 0;
+  padding: 0;
+  margin: 12px 0;
+  min-width: 0;
+}
+
+.editor-fields legend {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.editor-fields .field {
+  margin-top: 12px;
+}
+
+.editor-fields .note-input {
+  margin-bottom: 0;
+}

@@ -1,0 +1,134 @@
+:root {
+  --bg: #0e1014;
+  --card: #171b22;
+  --card-2: #1e242d;
+  --text: #eef1f6;
+  --muted: #8b94a5;
+  --accent: #4c8dff;
+  --accent-2: #7bd0ff;
+  --warn: #ffb02e;
+  --danger: #ff5c5c;
+  --line: #262d38;
+  --ok: #3ddc97;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system, 'MiSans', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
+  overscroll-behavior: none;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+.trend-scroll:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 3px;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+fieldset:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.card-label {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.big-num {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 12px;
+}
+
+.tiny {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 6px 0;
+}
+
+.error {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.warn-text {
+  color: var(--warn);
+}
+
+.status {
+  color: var(--ok);
+  font-size: 13px;
+}
+
+.error,
+.status {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.error {
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 92, 92, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 92, 92, 0.06);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

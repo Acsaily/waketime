@@ -30,7 +30,9 @@ async function download(url, dest, timeoutMs = 900000) {
     const pct = Math.floor((done / total) * 100);
     if (pct !== lastPct) {
       lastPct = pct;
-      log(`  ${path.basename(dest)}: ${pct}% (${(done / 1048576).toFixed(1)}/${(total / 1048576).toFixed(1)} MB)`);
+      log(
+        `  ${path.basename(dest)}: ${pct}% (${(done / 1048576).toFixed(1)}/${(total / 1048576).toFixed(1)} MB)`,
+      );
     }
   });
   await pipeline(body, createWriteStream(dest));
@@ -46,13 +48,19 @@ function sha1(file) {
 const jdkZip = path.join(DL, 'jdk21-win-x64.zip');
 await download(
   'https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jdk/hotspot/normal/eclipse',
-  jdkZip
+  jdkZip,
 );
 
 // ---------- 2) Android command-line tools（从官方仓库 XML 里取最新 windows 包） ----------
 log('resolve cmdline-tools from repository2-3.xml ...');
-const xml = await (await fetch('https://dl.google.com/android/repository/repository2-3.xml', { signal: AbortSignal.timeout(60000) })).text();
-const pkgBlock = xml.match(/<remotePackage path="cmdline-tools;latest">([\s\S]*?)<\/remotePackage>/);
+const xml = await (
+  await fetch('https://dl.google.com/android/repository/repository2-3.xml', {
+    signal: AbortSignal.timeout(60000),
+  })
+).text();
+const pkgBlock = xml.match(
+  /<remotePackage path="cmdline-tools;latest">([\s\S]*?)<\/remotePackage>/,
+);
 if (!pkgBlock) throw new Error('cmdline-tools;latest not found in repository xml');
 const archives = [...pkgBlock[1].matchAll(/<archive>([\s\S]*?)<\/archive>/g)].map((m) => m[1]);
 const winArchive = archives.find((a) => a.includes('<host-os>windows</host-os>'));
@@ -73,9 +81,12 @@ const gradleUrl = 'https://services.gradle.org/distributions/gradle-8.14.3-bin.z
 const gradleZip = path.join(DL, 'gradle-8.14.3-bin.zip');
 await download(gradleUrl, gradleZip);
 try {
-  const expected = (await (await fetch(gradleUrl + '.sha256', { signal: AbortSignal.timeout(30000) })).text()).trim();
+  const expected = (
+    await (await fetch(gradleUrl + '.sha256', { signal: AbortSignal.timeout(30000) })).text()
+  ).trim();
   const actual = createHash('sha256').update(readFileSync(gradleZip)).digest('hex');
-  if (expected && expected !== actual) throw new Error(`gradle sha256 mismatch: ${actual} != ${expected}`);
+  if (expected && expected !== actual)
+    throw new Error(`gradle sha256 mismatch: ${actual} != ${expected}`);
   log('  gradle sha256 OK');
 } catch (e) {
   log('  gradle sha256 check skipped/failed:', e.message);

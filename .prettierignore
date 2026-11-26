@@ -1,0 +1,36 @@
+# Generated / vendor / build output
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+android/
+.toolchain/
+.superpowers/
+out/
+tools/
+waketime-*.apk
+*.log
+
+# Private / machine-local material (never formatted or read by tooling)
+.claude/
+docs/backup-from-phone/
+docs/shots/
+docs/gpt-ds/
+docs/superpowers/.review/
+docs/session-notes.md
+
+# Historical artifacts: keep approved snapshots and original previews intact.
+docs/outcomes/2026-10-29-initial-landing.md
+docs/outcomes/2026-11-14-category-analytics-preview.md
+docs/outcomes/2026-11-14-v070-stats-segment-proposal.md
+docs/previews/
+docs/superpowers/plans/2026-10-26-waketime-app.md
+docs/superpowers/specs/2026-10-26-waketime-design.md
+
+# Synthetic tooling fixtures must stay byte-exact for the architecture self-test
+tests/tooling/fixtures/
+
+# Lockfile is generated and intentionally not formatted
+package-lock.json

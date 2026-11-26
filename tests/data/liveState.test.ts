@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { applyLiveState, defaultData, sanitizeCycle, sanitizeSegments } from '../../src/data/store';
-import type { Cycle } from '../../src/data/store';
-import type { LiveState, TimerSegment } from '../../src/native/contracts';
+import { applyLiveState, defaultData } from '../../src/application/index';
+import { sanitizeCycle, sanitizeSegments } from '../../src/modules/time-tracking/index';
+import type { Cycle } from '../../src/modules/time-tracking/index';
+import type { LiveState, TimerSegment } from '../../src/application/index';
 
 const T0 = new Date(2026, 9, 26, 18, 0, 0).getTime();
 
-function seg(id: string, startOffsetMin: number, endOffsetMin: number | null, note = ''): TimerSegment {
+function seg(
+  id: string,
+  startOffsetMin: number,
+  endOffsetMin: number | null,
+  note = '',
+): TimerSegment {
   return {
     id,
     seq: 0,
@@ -16,11 +22,24 @@ function seg(id: string, startOffsetMin: number, endOffsetMin: number | null, no
   };
 }
 
-function catSeg(id: string, startOffsetMin: number, endOffsetMin: number | null, category: string, note = ''): TimerSegment {
-  return { ...seg(id, startOffsetMin, endOffsetMin, note), category: category as TimerSegment['category'] };
+function catSeg(
+  id: string,
+  startOffsetMin: number,
+  endOffsetMin: number | null,
+  category: string,
+  note = '',
+): TimerSegment {
+  return {
+    ...seg(id, startOffsetMin, endOffsetMin, note),
+    category: category as TimerSegment['category'],
+  };
 }
 
-function liveOf(segments: TimerSegment[], sessionId = 'session-1', status: 'running' | 'ended' = 'running'): LiveState {
+function liveOf(
+  segments: TimerSegment[],
+  sessionId = 'session-1',
+  status: 'running' | 'ended' = 'running',
+): LiveState {
   return {
     cycleId: '2026-10-26',
     sleepAtMs: T0 - 8 * 3600_000,
@@ -74,7 +93,7 @@ describe('applyLiveState（修复历史页重复段）', () => {
     const first = liveOf([seg('a', 0, 10, '工作'), seg('b', 10, 20)], 'session-1', 'ended');
     const second = liveOf(
       [seg('a', 0, 10, '工作'), seg('b', 10, 20), seg('c', 30, 40, '吃饭'), seg('d', 40, null)],
-      'session-2'
+      'session-2',
     );
     let data = applyLiveState(defaultData(), first, T0 + 20 * 60_000);
     data = applyLiveState(data, second, T0 + 40 * 60_000);
@@ -96,7 +115,16 @@ describe('applyLiveState（开启第二天时标记睡前时间）', () => {
     sessionStartedAtMs: T0 + (sleepOffsetMin + 8 * 60) * 60_000,
     notificationsEnabled: true,
     clockAnomaly: false,
-    segments: [{ id: 'next-1', seq: 1, startAtMs: T0 + (sleepOffsetMin + 8 * 60) * 60_000, endAtMs: 0, note: '', source: 'app' }],
+    segments: [
+      {
+        id: 'next-1',
+        seq: 1,
+        startAtMs: T0 + (sleepOffsetMin + 8 * 60) * 60_000,
+        endAtMs: 0,
+        note: '',
+        source: 'app',
+      },
+    ],
   });
   const closed = (segments: TimerSegment[], bedtimeMin: number) => {
     let data = applyLiveState(defaultData(), liveOf(segments), T0 + bedtimeMin * 60_000);
@@ -105,17 +133,30 @@ describe('applyLiveState（开启第二天时标记睡前时间）', () => {
   };
 
   it('最后一次计次的开放尾段变成睡前时间（待分配）并封口在入睡时刻', () => {
-    const old = closed([catSeg('a', 0, 10, 'work'), catSeg('b', 10, null, 'unclassified', '刷手机')], 360);
+    const old = closed(
+      [catSeg('a', 0, 10, 'work'), catSeg('b', 10, null, 'unclassified', '刷手机')],
+      360,
+    );
     const b = old.session!.segments.find((s) => s.id === 'b')!;
     expect(b).toMatchObject({ endAtMs: T0 + 360 * 60_000, category: 'pre-sleep' });
     expect(b.note).toBe('刷手机');
     expect(old.closedAtMs).toBe(T0 + 360 * 60_000);
     expect(old.session!.status).toBe('ended');
-    expect(old.session!.segments.find((s) => s.id === 'a')).toMatchObject({ endAtMs: T0 + 10 * 60_000, category: 'work' });
+    expect(old.session!.segments.find((s) => s.id === 'a')).toMatchObject({
+      endAtMs: T0 + 10 * 60_000,
+      category: 'work',
+    });
   });
 
   it('已标过类别的开放尾段、非尾部的未分类段都不改', () => {
-    const old = closed([catSeg('a', 0, 10, 'unclassified'), catSeg('b', 10, 30, 'daily'), catSeg('c', 30, null, 'work')], 360);
+    const old = closed(
+      [
+        catSeg('a', 0, 10, 'unclassified'),
+        catSeg('b', 10, 30, 'daily'),
+        catSeg('c', 30, null, 'work'),
+      ],
+      360,
+    );
     expect(old.session!.segments.map((s) => s.category)).toEqual(['unclassified', 'daily', 'work']);
   });
 

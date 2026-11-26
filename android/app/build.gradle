@@ -58,6 +58,17 @@ repositories {
     }
 }
 
+// 共享契约 JSON 是原生单测的真实输入：修改 fixture 必须让 :app:testDebugUnitTest
+// 重新执行，否则 Gradle 会把它判为 UP-TO-DATE 而静默跳过新契约。
+// 同时通过 system property 固定解析路径，避免测试依赖 user.dir 的向上查找。
+def sharedTimerContract = rootProject.file('../contracts/timer-cases.json')
+tasks.withType(org.gradle.api.tasks.testing.Test).configureEach { unitTest ->
+    unitTest.inputs.file(sharedTimerContract)
+        .withPropertyName('waketimeSharedTimerContract')
+        .withPathSensitivity(org.gradle.api.tasks.PathSensitivity.RELATIVE)
+    unitTest.systemProperty('waketime.contracts', sharedTimerContract.absolutePath)
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"

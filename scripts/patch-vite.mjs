@@ -2,7 +2,7 @@
 // `exec("net use")` 探测网络盘，导致 vite build / vitest 直接失败。
 // 这里把该探测绕开：不走 windowsSafeRealPathSync，直接用 fs.realpathSync.native。
 // npm install 后由 postinstall 自动执行，可重复运行。
-import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.resolve(process.cwd(), 'node_modules');
@@ -33,8 +33,12 @@ function check(file) {
   }
   scanned++;
   if (!src.includes(PATTERN)) return;
-  let out = src.split('isWindows$1 ? windowsSafeRealPathSync :').join('isWindows$1 ? fs.realpathSync.native :');
-  out = out.split('isWindows ? windowsSafeRealPathSync :').join('isWindows ? fs.realpathSync.native :');
+  let out = src
+    .split('isWindows$1 ? windowsSafeRealPathSync :')
+    .join('isWindows$1 ? fs.realpathSync.native :');
+  out = out
+    .split('isWindows ? windowsSafeRealPathSync :')
+    .join('isWindows ? fs.realpathSync.native :');
   if (out === src) {
     console.log('[patch-vite] found exec("net use") but pattern not replaced:', file);
     return;

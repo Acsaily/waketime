@@ -1,0 +1,244 @@
+.sleep-head {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sleep-body {
+  display: flex;
+  gap: 26px;
+  margin: 10px 0 8px;
+}
+
+.sleep-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.countdown-card {
+  background: linear-gradient(160deg, #142033 0%, #171b22 60%);
+}
+
+.countdown-card.over {
+  background: linear-gradient(160deg, #2a1d17 0%, #171b22 60%);
+}
+
+.countdown-value {
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+  margin: 6px 0 10px;
+}
+
+.countdown-card.over .countdown-value {
+  color: var(--warn);
+  font-size: 38px;
+}
+
+.progress {
+  height: 6px;
+  background: #0b0e13;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.4s linear;
+}
+
+.stopwatch-value {
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+  margin: 4px 0 12px;
+}
+
+.stopwatch-actions .btn {
+  flex: 1;
+}
+
+/* ---------- 睡眠录入 / 截图 ---------- */
+.duration-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.duration-row input {
+  width: 74px;
+  text-align: center;
+}
+
+.shot-preview {
+  margin-top: 8px;
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.shot-thumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  background: #0f1319;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.shot-thumb img {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.shot-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 20px;
+}
+
+.shot-mask img {
+  max-width: 100%;
+  max-height: 78vh;
+  border-radius: 12px;
+}
+
+.shot-mask p {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pending-note {
+  background: rgba(255, 176, 46, 0.12);
+  border: 1px solid rgba(255, 176, 46, 0.35);
+  color: var(--warn);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+}
+
+.sleep-head,
+.sleep-foot,
+.sleep-body {
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+
+.sleep-body > div {
+  min-width: 80px;
+}
+
+.sleep-foot .link {
+  flex-shrink: 0;
+}
+
+.countdown-value {
+  font-size: clamp(32px, 10vw, 46px);
+}
+
+.stopwatch-value,
+.countdown-card.over .countdown-value {
+  font-size: clamp(28px, 9vw, 38px);
+}
+
+.stopwatch-card.napping {
+  border-color: rgba(123, 208, 255, 0.45);
+}
+
+.nap-status {
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill {
+    transition: none;
+  }
+}
+
+/* ---------- 计次反馈 ---------- */
+.stopwatch-value {
+  animation: lap-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.stopwatch-actions .btn.primary {
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.18s ease;
+}
+.stopwatch-actions .btn.primary:active {
+  transform: scale(0.97);
+  box-shadow: 0 0 24px rgba(76, 141, 255, 0.35);
+}
+@keyframes lap-pop {
+  from {
+    transform: scale(1.055);
+    opacity: 0.75;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stopwatch-value {
+    animation: none;
+  }
+}
+
+/* 今日页分类汇总：默认大类合计，点大类下钻细分，下钻后点整块返回 */
+.cycle-summary.today-summary > button.summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cycle-summary.today-summary > button.summary-row:active {
+  opacity: 0.7;
+}
+.cycle-summary.today-summary .summary-chevron {
+  font-style: normal;
+  color: var(--accent);
+}
+.cycle-summary.today-summary.is-drilled {
+  cursor: pointer;
+}
+.cycle-summary.today-summary .summary-crumb {
+  grid-column: 1 / -1;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
