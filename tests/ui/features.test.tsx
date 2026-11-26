@@ -84,6 +84,7 @@ function fakeApi() {
     openNotificationSettings: noop(),
     openAppSettings: noop(),
     exportRecords: vi.fn(async () => '合成导出成功'),
+    exportPeriod: vi.fn(async () => '合成周期导出成功'),
     readRestoreFile: vi.fn(async () => ({ cycles: [], categories: [] })),
     screenshotUrl: vi.fn(async () => null),
     feedback: vi.fn(),
@@ -217,6 +218,38 @@ describe('feature UI and application boundary', () => {
     expect(api.startCycle).toHaveBeenLastCalledWith(
       expect.objectContaining({ sleepDurationMs: 8 * H, note: '合成睡眠备注' }),
     );
+  });
+
+  it('fills editable period dates, previews records and shares the export lock', async () => {
+    const { api } = fakeApi();
+    const pending = deferred<string>();
+    api.exportPeriod.mockReturnValueOnce(pending.promise);
+    render(<Settings api={api} />);
+    fireEvent.click(screen.getByRole('button', { name: '最近 7 天' }));
+    const start = screen.getByLabelText('开始日期');
+    const end = screen.getByLabelText('结束日期');
+    const day = new Date(T).getDate();
+    const key = `2026-11-${String(day).padStart(2, '0')}`;
+    fireEvent.change(start, { target: { value: key } });
+    fireEvent.change(end, { target: { value: key } });
+    expect(screen.getByText('记录 1 天 · 1 个周期')).toBeVisible();
+    expect(screen.getByText(/1 个周期尚未结束/)).toBeVisible();
+    const button = screen.getByRole('button', { name: '周期 JSON' });
+    fireEvent.click(button);
+    expect(api.exportPeriod).toHaveBeenCalledWith(
+      'json',
+      { startDate: key, endDate: key },
+      api.now,
+    );
+    expect(screen.getByRole('button', { name: '全量备份 JSON' })).toBeDisabled();
+    expect(start).toBeDisabled();
+    await act(async () => pending.resolve('周期成功'));
+    expect(screen.getByText('周期成功')).toBeVisible();
+    fireEvent.change(start, { target: { value: '2026-12-01' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('开始日期不能晚于结束日期');
+    expect(start).toHaveAttribute('aria-invalid', 'true');
+    expect(button).toBeDisabled();
+    expect(screen.getByRole('button', { name: '全量备份 JSON' })).toBeEnabled();
   });
 
   it('settings use application-owned permission and export operations with retry feedback', async () => {

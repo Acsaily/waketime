@@ -13,6 +13,7 @@ export function buildPdfBlocks(
   allCycles: Cycle[] = [cycle],
   categories: CategoryDefinition[] = defaultCategories(),
   now: () => number = Date.now,
+  scope: 'all' | 'range' = 'all',
 ): PdfBlock[] {
   const blocks: PdfBlock[] = [];
   const segs = cycle.session?.segments ?? [];
@@ -78,7 +79,13 @@ export function buildPdfBlocks(
         right: formatSigned(d.driftMs),
       });
     } else {
-      blocks.push({ kind: 'para', text: '相对参考截止：还没有下一个周期，无法计算' });
+      blocks.push({
+        kind: 'para',
+        text:
+          scope === 'range'
+            ? '相对参考截止：所选范围内没有下一周期，无法计算'
+            : '相对参考截止：还没有下一个周期，无法计算',
+      });
     }
     blocks.push({
       kind: 'para',

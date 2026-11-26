@@ -1072,6 +1072,46 @@ describe('application coordination without React', () => {
     expect(f.app.getSnapshot()).toBe(before);
   });
 
+  it('exports the same inclusive wake-date selection and preview instant through all formats without writing', async () => {
+    const f = fixture({ native: true, initial: historyData() });
+    await f.app.initialize();
+    const before = f.app.getSnapshot();
+    const range = { startDate: base, endDate: base };
+    const previewAt = now;
+    f.setTime(now + 2 * H);
+    const selected = records(f.app);
+    await f.app.exportPeriod('json', range, previewAt);
+    await f.app.exportPeriod('txt', range, previewAt);
+    await f.app.exportPeriod('pdf', range, previewAt);
+    const json = JSON.parse(f.sharedFiles[0].text);
+    expect(json.cycles).toEqual([selected]);
+    expect(json.exportedAtMs).toBe(previewAt);
+    expect(json.exportRange).toEqual({ ...range, by: 'wakeDate' });
+    expect(f.sharedFiles[1].text).toContain('所选范围内没有下一周期');
+    expect(f.sharedFiles[1].text).not.toContain('等下一次录入后自动补上');
+    expect(f.pdfRequests[0].blocks).toContainEqual({
+      kind: 'para',
+      text: '相对参考截止：所选范围内没有下一周期，无法计算',
+    });
+    expect(json.cycleSummaries[0].awakeMs).toBe(4 * H);
+    expect(f.sharedFiles[0].name).toBe(`waketime-period-${base}_${base}.json`);
+    expect(f.sharedFiles[1].text).toContain('实际清醒：4h');
+    expect(f.pdfRequests[0].blocks).toContainEqual({
+      kind: 'para',
+      text: expect.stringContaining('实际清醒 4h'),
+    });
+    expect(f.pdfRequests[0].filename).toBe(`waketime-period-${base}_${base}.pdf`);
+    expect(f.app.getSnapshot()).toBe(before);
+    const count = f.sharedFiles.length;
+    await expect(
+      f.app.exportPeriod('json', { startDate: '2026-02-30', endDate: base }, now),
+    ).rejects.toThrow();
+    await expect(
+      f.app.exportPeriod('json', { startDate: '2000-01-01', endDate: '2000-01-02' }, now),
+    ).rejects.toThrow();
+    expect(f.sharedFiles).toHaveLength(count);
+  });
+
   it('exports through injected file capability without refreshing or writing records', async () => {
     const f = fixture();
     await f.app.initialize();

@@ -34,6 +34,7 @@ import type {
 } from './ports';
 import { buildBackupJson, buildDayTxt, dayFileName } from './exportFormat';
 import { buildPdfBlocks } from './pdfDoc';
+import { buildPeriodExport, type DateRange, type PeriodExportKind } from './periodExport';
 
 export interface NewSleepInput {
   wakeAtMs: number;
@@ -454,6 +455,21 @@ export function createApplication({
     });
     return `已生成 PDF（${Math.round(res.size / 1024)} KB），正在打开分享面板…`;
   };
+  const exportPeriod = async (
+    kind: PeriodExportKind,
+    range: DateRange,
+    nowMs: number,
+  ): Promise<string> => {
+    const { data } = snapshot;
+    const output = buildPeriodExport(kind, data.cycles, data.settings, range, nowMs);
+    if ('text' in output) {
+      await files.shareTextFile(output.filename, output.text);
+      return `已生成周期 ${kind.toUpperCase()}`;
+    }
+    if (!isNativePlatform) throw new Error('PDF 只能在手机上生成（浏览器里没有原生渲染）');
+    const res = await files.exportPdf({ ...output, share: true });
+    return `已生成周期 PDF（${Math.round(res.size / 1024)} KB），正在打开分享面板…`;
+  };
   const readRestoreFile = async (file: RestoreFileInput) =>
     readRestoreBackup(JSON.parse(await file.text()), () => clock.now());
   const screenshotUrl = (path: string) => files.screenshotUrl(path);
@@ -488,6 +504,7 @@ export function createApplication({
     openNotificationSettings,
     openAppSettings,
     exportRecords,
+    exportPeriod,
     readRestoreFile,
     screenshotUrl,
     feedback,

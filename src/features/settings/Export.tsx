@@ -3,6 +3,7 @@ import type { AppApi, ExportKind } from '../../application/index';
 import { summarizeCycle } from '../../modules/time-tracking/index';
 import { formatHuman } from '../../modules/time-tracking/index';
 import { CycleSummary } from './CycleSummary';
+import { PeriodExport } from './PeriodExport';
 
 export function ExportPanel({ api }: { api: AppApi }) {
   const { data } = api;
@@ -18,14 +19,17 @@ export function ExportPanel({ api }: { api: AppApi }) {
   const cycle = useMemo(() => data.cycles.find((c) => c.id === selected), [data.cycles, selected]);
   const totals = cycle ? summarizeCycle(cycle, api.now) : null;
 
-  const doExport = async (kind: ExportKind) => {
+  const clearFeedback = () => {
+    setStatus(null);
+    setError(null);
+  };
+  const runExport = async (exportFile: () => Promise<string>) => {
     if (locked.current) return;
     locked.current = true;
     setBusy(true);
-    setStatus(null);
-    setError(null);
+    clearFeedback();
     try {
-      setStatus(await api.exportRecords(kind, kind === 'backup' ? undefined : cycle?.id));
+      setStatus(await exportFile());
     } catch (e) {
       setError('导出失败：' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -33,6 +37,9 @@ export function ExportPanel({ api }: { api: AppApi }) {
       setBusy(false);
     }
   };
+
+  const doExport = (kind: ExportKind) =>
+    runExport(() => api.exportRecords(kind, kind === 'backup' ? undefined : cycle?.id));
 
   if (data.cycles.length === 0) {
     return (
@@ -104,6 +111,14 @@ export function ExportPanel({ api }: { api: AppApi }) {
           全量备份 JSON
         </button>
       </div>
+      <PeriodExport
+        api={api}
+        busy={busy}
+        onChange={clearFeedback}
+        onExport={(kind, range, nowMs) =>
+          void runExport(() => api.exportPeriod(kind, range, nowMs))
+        }
+      />
       <p className="hint">
         TXT 适合直接丢给 AI 读；PDF 适合存档/打印；JSON 保留完整字段，适合让 AI
         精确计算。导出后会弹系统分享面板，可以发到微信文件传输助手，再到电脑上打开。
