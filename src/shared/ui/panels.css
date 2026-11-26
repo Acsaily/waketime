@@ -1,0 +1,61 @@
+.history-tabs {
+  display: flex;
+  padding: 4px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+}
+
+.history-tabs button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  min-height: 38px;
+}
+
+.history-tabs button[aria-selected='true'] {
+  color: var(--text);
+  background: linear-gradient(180deg, #24344d, #1d2838);
+  box-shadow: inset 0 0 0 1px rgba(123, 208, 255, 0.18);
+}
+
+.history-swipe-tip {
+  text-align: center;
+  font-size: 10px;
+  color: #6f7888;
+  margin: -4px 0 0;
+}
+
+.history-panel {
+  min-width: 0;
+}
+.history-panel-left {
+  animation: history-in-left 0.24s cubic-bezier(0.22, 0.72, 0.26, 1);
+}
+.history-panel-right {
+  animation: history-in-right 0.24s cubic-bezier(0.22, 0.72, 0.26, 1);
+}
+@keyframes history-in-left {
+  from {
+    opacity: 0.55;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes history-in-right {
+  from {
+    opacity: 0.55;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

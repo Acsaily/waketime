@@ -4,6 +4,8 @@
 
 个人项目，公开源码；侧载安装，不联网、无账号。
 
+> `refactor/eng` 分支正在做行为保持式工程重构：v0.9.0（`8307835`）是行为、数据与 schema 3 的基线，用户数据和已发布版本不变。工程结构、ADR 与验证入口见 [docs/architecture/overview.md](docs/architecture/overview.md)。
+
 ## 下载 / 安装
 
 - 公开仓库：<https://github.com/Acsaily/waketime>
@@ -15,7 +17,7 @@
 
 - **分类**：标签分大类（如工作）和小标签（学日语、机械…），贴标签时先选大类再选细分，大类本身也可以直接记录。每个标签有颜色，新增时自动分配并可在统计页的分类管理里改色；删除有历史的标签只会停用，历史名称、备注和时长保留，之后可改标或恢复。
 - **今日页**：睡眠录入（起止时间 + 可选得分/手表时长/备注）→ 睡眠时长、清醒预算、参考截止；倒计时大字 + 进度条；秒表大字 + 计次/结束计时；今日时间轴（点开可改备注、分类、拆分或合并）。
-- **通知栏**：一条常驻通知，显示「已清醒 HH:MM:SS」+「已完成清醒段 N 段 · 参考剩余」；**长按通知**展开「计次并备注 / 结束计时」，点「计次并备注」可直接在通知栏打字，发送即落库。
+- **通知栏**：一条常驻通知，显示「已清醒 HH:MM:SS」+「已完成清醒段 N 段 · 参考剩余」；**长按通知**展开「计次 / 结束计时」。计次可在通知栏完成，备注在 App 中补写；当前 v0.9.0 原生通知未配置直接文字回复。
 - **历史页**：周趋势 / 每日明细两块面板。周趋势按周看平均睡眠、入睡波动、相对参考截止偏移、每天时长与睡眠区间；每日明细按月历查看每天，点日期看当天时间轴（可编辑、拆分、合并）。
 - **统计页**：分类统计 / 分类管理两块滑动面板。按周 / 月 / 年看总清醒时间、环形占比和堆叠柱状 + 折线趋势，可切换「合计 / 单分类」。统计支持「大类 / 细分」两层：默认看大类，切到细分可看全部小标签，点某个大类可下钻看它内部的细分占比。开启第二天时自动把最后一次计次到入睡的时段标成「睡前时间（待分配）」，可用层级选择器分配。
 - **导出（设置页内）**：选日期导出 TXT / PDF / JSON，或全量备份 JSON；导出后走系统分享面板（微信文件传输助手 → 电脑）。
@@ -24,34 +26,46 @@
 
 ## 技术栈（锁死版本）
 
-| 组件 | 版本 |
-|---|---|
-| React / React DOM | 19.3.1 |
-| TypeScript | 5.9.3 |
-| Vite / @vitejs/plugin-react | 8.3.5 / 6.1.2 |
-| Capacitor (core/cli/android) | 8.5.3 |
-| Capacitor 插件 | app 8.1.2 / filesystem 8.1.5 / share 8.0.3 / haptics 8.0.2 |
-| JDK | 21（`.toolchain/jdk21`，**不要用系统 JDK 25**） |
-| AGP / Gradle | 8.13.0 / 8.14.3 |
-| compileSdk / targetSdk / minSdk | 36 / 36 / 24 |
-| Build Tools | 35.0.0 |
+| 组件                            | 版本                                                       |
+| ------------------------------- | ---------------------------------------------------------- |
+| React / React DOM               | 19.3.1                                                     |
+| TypeScript                      | 5.9.3                                                      |
+| Vite / @vitejs/plugin-react     | 8.3.5 / 6.1.2                                              |
+| Capacitor (core/cli/android)    | 8.5.3                                                      |
+| Capacitor 插件                  | app 8.1.2 / filesystem 8.1.5 / share 8.0.3 / haptics 8.0.2 |
+| JDK                             | 21（`.toolchain/jdk21`，**不要用系统 JDK 25**）            |
+| AGP / Gradle                    | 8.13.0 / 8.14.3                                            |
+| compileSdk / targetSdk / minSdk | 36 / 36 / 24                                               |
+| Build Tools                     | 35.0.0                                                     |
 
 包名 `com.personal.waketime`，应用名「清醒时光」。HTML/JS 全部打进 APK，离线可用。
 
 ## 目录
 
-```
-src/             React 前端（pages / components / core / data / native / export）
-android/         Capacitor 安卓工程 + 我们自己的 Java 插件
+```text
+src/
+  app/             React 装配、订阅、显示时钟、生命周期、导航
+  application/     跨域操作、唯一写入队列、状态快照、ports、备份/恢复/导出
+  modules/
+    time-tracking/ 核心域：周期、主睡眠、补觉、活动段、计时与历史规则
+    classification/ 分类目录、颜色、两级层级与生命周期
+    analytics/     周/月/年统计、趋势、分类聚合（只读）
+  infrastructure/  Capacitor/文件/原生桥/反馈适配
+  features/        today / history / statistics / settings 页面
+  shared/ui/       跨 feature 的通用控件与样式
+android/           Capacitor 安卓工程 + 自有 Java 插件
   app/src/main/java/com/personal/waketime/
-    timer/       TimerMath / TimerState / TimerRepository / TimerEnv / TimerNotifications / TimerService
-    export/      PdfExporter / PdfExportPlugin
+    timer/         TimerMath / TimerState / TimerRepository / TimerEnv / TimerNotifications / TimerService
+    export/        PdfExporter / PdfExportPlugin
     WakeTimerPlugin.java   ← JS <-> 原生计时状态
-tests/           vitest 单测（时间核心）
-scripts/         工具链下载、env.ps1、vite 补丁
-.toolchain/      JDK / Android SDK / Gradle / npm 缓存 / 签名 key（不进 git）
-docs/            设计文档、实施计划、真机截图
+contracts/         TS / Java 共用的合成行为案例
+tests/             领域、应用、数据、契约、属性、差分、UI、E2E、工具配置测试
+scripts/           工具链、架构门、差分、验证入口、MuMu harness
+.toolchain/        JDK / Android SDK / Gradle / npm 缓存 / 签名 key（不进 git）
+docs/              架构、ADR、设计/计划、真机截图、恢复样本
 ```
+
+工程细节见 [架构文档](docs/architecture/overview.md)：[模块地图](docs/architecture/module-map.md)、[数据生命周期](docs/architecture/data-lifecycle.md)、[验证与质量门](docs/architecture/verification.md)、[ADR](docs/adr/0001-domain-first-modular-monolith.md)。
 
 ## 构建
 
@@ -69,15 +83,45 @@ cd android
 ```
 
 APK 输出：
+
 - debug：`android/app/build/outputs/apk/debug/app-debug.apk`
 - release：`android/app/build/outputs/apk/release/app-release.apk`
 
 安装：手机开 USB 调试 → `adb install -r <apk>`（或直接把 APK 传到手机点安装）。
 
+## 验证
+
+本地入口是 `scripts/verify.mjs`；详细说明、改动范围选择和证据边界见 [docs/architecture/verification.md](docs/architecture/verification.md)。
+
+```powershell
+# 日常快速门：类型检查 + 观察模式 lint/arch + 单测
+node scripts/verify.mjs check
+
+# 按改动选范围（domain / application / data / contract / ui / native）
+node scripts/verify.mjs check --areas ui
+
+# 严格验收：严格 lint/arch、格式、属性、差分、浏览器 E2E、原生 JUnit
+node scripts/verify.mjs strict
+
+# 属性失败重放
+node scripts/verify.mjs property --seed 26092601 --path 12:3
+
+# 生产备份只读差分（路径必须在仓库外；不复制、不打印内容）
+node scripts/verify.mjs private --backup E:\path-outside-repo\waketime-backup.json --now 1795708800000 --tz Asia/Shanghai
+
+# 独立 8307835 基线检查/重建（git archive + npm ci）
+node scripts/verify.mjs baseline --check
+```
+
+- `check` 通过不等于验收；`strict` 也不构建/安装 APK，不等于原生 E2E 完成。
+- 原生单测：`.\android\gradlew.bat :app:testDebugUnitTest`；必须用 `.toolchain/jdk21`，不要用系统 JDK 25。
+- MuMu 设备操作是单独授权步骤，默认只读；身份与显式 serial 要求见验证文档。
+- 生产备份、真实备注、私人截图、签名 key 不进入 Git、日志或追踪文档。
+
 ## 签名
 
 - key：`.toolchain/keys/waketime-release.jks`，alias `waketime`，密码在 `.toolchain/keys/keystore.properties`
-- `android/keystore.properties` 指向这把 key，**debug 和 release 都用它签**，所以版本之间可以互相覆盖安装、数据不丢。
+- 配置原生产签名时，`android/keystore.properties` 指向原来的 key，debug 和 release 可使用相同签名覆盖安装。缺少该配置时，debug 使用 Android 默认测试签名，只能用于独立测试实例；不可覆盖生产手机上的原签名版本。不要生成替代生产 key。
 - 证书 SHA-256：`4F:BC:C0:19:D2:2E:CB:3E:00:B8:AB:DF:2A:EF:B6:12:25:42:62:A5:73:5A:5B:33:D3:E1:A9:ED:EE:24:48:8E`
 - **丢了这把 key 就只能卸载重装**（先用「设置 → 导出与备份 → 全量备份 JSON」，装好后用「设置 → 从备份恢复」）。
 
@@ -90,7 +134,7 @@ APK 输出：
 ## 小米 / HyperOS 注意事项
 
 1. 设置 → 应用设置 → 清醒时光：允许通知、允许自启动、后台运行「不受限制」、最近任务里锁定。
-2. 常驻通知要用**长按**才会展开「计次并备注 / 结束计时」。
+2. 常驻通知要用**长按**才会展开「计次 / 结束计时」。
 3. HyperOS 会把同一 App 的多条通知折叠成一张卡，所以这里只做了一条通知；倒计时只在 App 首页显示。
 
 ## 已知限制

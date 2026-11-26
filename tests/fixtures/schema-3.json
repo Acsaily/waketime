@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 3,
+  "appVersion": "0.9.0",
+  "settings": {
+    "notificationsEnabled": false,
+    "quickNotes": ["合成词"],
+    "categories": [
+      {
+        "id": "work",
+        "name": "工作",
+        "archived": false,
+        "color": "#4c8dff",
+        "parentId": null
+      },
+      {
+        "id": "daily",
+        "name": "日常",
+        "archived": false,
+        "color": "#3ddc97",
+        "parentId": null
+      },
+      {
+        "id": "unclassified",
+        "name": "未分类",
+        "archived": false,
+        "color": "#8b94a5",
+        "parentId": null
+      },
+      {
+        "id": "pre-sleep",
+        "name": "睡前时间（待分配）",
+        "archived": false,
+        "color": "#ffb86b",
+        "parentId": null
+      },
+      {
+        "id": "sleep",
+        "name": "补觉",
+        "archived": false,
+        "color": "#7a86a8",
+        "parentId": null
+      },
+      {
+        "id": "cat-study",
+        "name": "学习",
+        "archived": false,
+        "color": "#123456",
+        "parentId": "work"
+      },
+      {
+        "id": "cat-old",
+        "name": "旧类",
+        "archived": true,
+        "color": "#abcdef",
+        "parentId": null
+      }
+    ],
+    "hapticsEnabled": false,
+    "soundEnabled": true
+  },
+  "cycles": [
+    {
+      "id": "2026-11-09",
+      "timeZone": "Asia/Shanghai",
+      "sleepAtMs": 1794150000000,
+      "wakeAtMs": 1794178800000,
+      "sleepDurationMs": 28800000,
+      "awakeBudgetMs": 57600000,
+      "targetAtMs": 1794236400000,
+      "sleepMetrics": {
+        "score": 83,
+        "reportedTotalMs": 25200000,
+        "note": "合成睡眠\n备注"
+      },
+      "screenshotPath": "synthetic/sleep.png",
+      "source": "manual",
+      "session": {
+        "id": "s-A",
+        "startedAtMs": 1794178800000,
+        "status": "ended",
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "endAtMs": 1794186000000,
+            "category": "work",
+            "note": "  合成A\n行  ",
+            "source": "notification"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794186000000,
+            "endAtMs": 1794189600000,
+            "category": "cat-study",
+            "note": "合成B",
+            "source": "app",
+            "splitFromId": "origin-b"
+          },
+          {
+            "id": "c",
+            "seq": 3,
+            "startAtMs": 1794189600000,
+            "endAtMs": 1794193200000,
+            "category": "sleep",
+            "note": "补觉",
+            "source": "app"
+          },
+          {
+            "id": "d",
+            "seq": 4,
+            "startAtMs": 1794196800000,
+            "endAtMs": 1794200400000,
+            "category": "daily",
+            "note": "",
+            "source": "app"
+          },
+          {
+            "id": "e",
+            "seq": 5,
+            "startAtMs": 1794200400000,
+            "endAtMs": 1794207600000,
+            "category": "unclassified",
+            "note": "合成E",
+            "source": "app"
+          }
+        ]
+      },
+      "closedAtMs": 1794207600000,
+      "flags": ["clock_anomaly"],
+      "createdAtMs": 1794178800000,
+      "updatedAtMs": 1794178800123
+    },
+    {
+      "id": "2026-11-09-2",
+      "timeZone": "Asia/Shanghai",
+      "sleepAtMs": 1794211200000,
+      "wakeAtMs": 1794222000000,
+      "sleepDurationMs": 10800000,
+      "awakeBudgetMs": 75600000,
+      "targetAtMs": 1794297600000,
+      "sleepMetrics": {
+        "score": null,
+        "reportedTotalMs": null,
+        "note": null
+      },
+      "screenshotPath": null,
+      "source": "ocr",
+      "session": {
+        "id": "s-C",
+        "startedAtMs": 1794222000000,
+        "status": "ended",
+        "segments": [
+          {
+            "id": "f",
+            "seq": 1,
+            "startAtMs": 1794222000000,
+            "endAtMs": 1794229200000,
+            "category": "cat-old",
+            "note": "合成F",
+            "source": "app"
+          }
+        ]
+      },
+      "closedAtMs": 1794229200000,
+      "flags": [],
+      "createdAtMs": 1794222000000,
+      "updatedAtMs": 1794222000123
+    },
+    {
+      "id": "2026-11-10",
+      "timeZone": "Asia/Shanghai",
+      "sleepAtMs": 1794240000000,
+      "wakeAtMs": 1794268800000,
+      "sleepDurationMs": 28800000,
+      "awakeBudgetMs": 57600000,
+      "targetAtMs": 1794326400000,
+      "sleepMetrics": {
+        "score": null,
+        "reportedTotalMs": null,
+        "note": null
+      },
+      "screenshotPath": null,
+      "source": "backfill",
+      "session": {
+        "id": "s-B",
+        "startedAtMs": 1794268800000,
+        "status": "ended",
+        "segments": [
+          {
+            "id": "g",
+            "seq": 1,
+            "startAtMs": 1794268800000,
+            "endAtMs": 1794272400000,
+            "category": "pre-sleep",
+            "note": "合成G",
+            "source": "app"
+          }
+        ]
+      },
+      "closedAtMs": 1794272400000,
+      "flags": [],
+      "createdAtMs": 1794268800000,
+      "updatedAtMs": 1794268800123
+    },
+    {
+      "id": "2026-11-12",
+      "timeZone": "Asia/Shanghai",
+      "sleepAtMs": 1794409200000,
+      "wakeAtMs": 1794438000000,
+      "sleepDurationMs": 28800000,
+      "awakeBudgetMs": 57600000,
+      "targetAtMs": 1794495600000,
+      "sleepMetrics": {
+        "score": null,
+        "reportedTotalMs": null,
+        "note": null
+      },
+      "screenshotPath": null,
+      "source": "manual",
+      "session": {
+        "id": "s-D",
+        "startedAtMs": 1794438000000,
+        "status": "running",
+        "segments": [
+          {
+            "id": "h",
+            "seq": 1,
+            "startAtMs": 1794438000000,
+            "endAtMs": 1794441600000,
+            "category": "work",
+            "note": "合成H",
+            "source": "app"
+          },
+          {
+            "id": "i",
+            "seq": 2,
+            "startAtMs": 1794441600000,
+            "endAtMs": 1794445200000,
+            "category": "sleep",
+            "note": "合成I",
+            "source": "app"
+          },
+          {
+            "id": "j",
+            "seq": 3,
+            "startAtMs": 1794445200000,
+            "endAtMs": 0,
+            "category": "cat-study",
+            "note": "",
+            "source": "app"
+          }
+        ]
+      },
+      "closedAtMs": null,
+      "flags": [],
+      "createdAtMs": 1794438000000,
+      "updatedAtMs": 1794438000123
+    }
+  ]
+}

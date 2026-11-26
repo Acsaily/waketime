@@ -12,6 +12,11 @@ android/app/release/
 .DS_Store
 docs/superpowers/.review/
 
+# Playwright artifacts
+playwright-report/
+test-results/
+blob-report/
+
 # 本机/个人数据与临时工作线，绝不进公开仓库
 .claude/
 out/

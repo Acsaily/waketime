@@ -1,0 +1,3034 @@
+{
+  "schema": "waketime-timer-contract@1",
+  "description": "Single synthetic fixture shared by the TypeScript core and the Java native timer repository. t = 2026-11-09T07:00:00+08:00; mono0 = 10000000; boot = b1. Segment ids starting with @ are newly generated ids bound per language: TS must match makeIds in order, Java asserts non-empty/unique and reuses the binding.",
+  "meta": {
+    "t": 1794178800000,
+    "minuteMs": 60000,
+    "hourMs": 3600000,
+    "bootId": "b1",
+    "mono0": 10000000,
+    "timeZone": "Asia/Shanghai"
+  },
+  "cases": [
+    {
+      "id": "C-edit",
+      "scope": "common",
+      "label": "closed segment edit keeps id/bounds/source; open awake cannot switch to sleep; missing id and invalid category reject",
+      "seed": {
+        "cycleId": "cyc-edit",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-edit",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "edit",
+          "atMs": 1794179040000,
+          "args": {
+            "id": "a",
+            "note": "x\n x",
+            "category": "sleep"
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "x\n x",
+                "category": "sleep",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "edit",
+          "atMs": 1794179040000,
+          "args": {
+            "id": "b",
+            "note": "",
+            "category": "sleep"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "x\n x",
+                "category": "sleep",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "edit",
+          "atMs": 1794179040000,
+          "args": {
+            "id": "missing",
+            "note": "",
+            "category": "work"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "x\n x",
+                "category": "sleep",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "edit",
+          "atMs": 1794179040000,
+          "args": {
+            "id": "a",
+            "note": "",
+            "category": "bad id"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "x\n x",
+                "category": "sleep",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-split",
+      "scope": "common",
+      "label": "closed split preserves 180123ms outer bound, assigns a fresh id per new part, inherits source and lineage",
+      "seed": {
+        "cycleId": "cyc-split",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-split",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178980123,
+            "endMonoMs": 10180123,
+            "note": "原备注",
+            "category": "work",
+            "source": "notification"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178980123,
+            "startMonoMs": 10180123,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "makeIds": ["new-split-1", "new-split-2"],
+      "steps": [
+        {
+          "op": "split",
+          "atMs": 1794179040000,
+          "args": {
+            "segmentId": "a",
+            "expected": {
+              "id": "a",
+              "startAtMs": 1794178800000,
+              "endAtMs": 1794178980123,
+              "note": "原备注",
+              "category": "work"
+            },
+            "cuts": [1794178860000, 1794178920000],
+            "parts": [
+              {
+                "note": "一",
+                "category": "work"
+              },
+              {
+                "note": "二",
+                "category": "daily"
+              },
+              {
+                "note": "三",
+                "category": "cat-study"
+              }
+            ]
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "一",
+                "category": "work",
+                "source": "notification",
+                "splitFromId": "a"
+              },
+              {
+                "id": "@new1",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 1794178920000,
+                "note": "二",
+                "category": "daily",
+                "source": "notification",
+                "splitFromId": "a"
+              },
+              {
+                "id": "@new2",
+                "seq": 3,
+                "startAtMs": 1794178920000,
+                "endAtMs": 1794178980123,
+                "note": "三",
+                "category": "cat-study",
+                "source": "notification",
+                "splitFromId": "a"
+              },
+              {
+                "id": "b",
+                "seq": 4,
+                "startAtMs": 1794178980123,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-open",
+      "scope": "common",
+      "label": "open split backfills a completed nap window and leaves the last part open at 0; the shared summary at t+4m reports nap 60000ms and actual awake 180000ms",
+      "seed": {
+        "cycleId": "cyc-open",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-open",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "makeIds": ["new-open-1"],
+      "steps": [
+        {
+          "op": "split",
+          "atMs": 1794179040000,
+          "args": {
+            "segmentId": "b",
+            "expected": {
+              "id": "b",
+              "startAtMs": 1794178860000,
+              "endAtMs": 0,
+              "note": "",
+              "category": "unclassified"
+            },
+            "cuts": [1794178920000],
+            "parts": [
+              {
+                "note": "补记",
+                "category": "sleep"
+              },
+              {
+                "note": "清醒",
+                "category": "work"
+              }
+            ]
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 1794178920000,
+                "note": "补记",
+                "category": "sleep",
+                "source": "app",
+                "splitFromId": "b"
+              },
+              {
+                "id": "@new1",
+                "seq": 3,
+                "startAtMs": 1794178920000,
+                "endAtMs": 0,
+                "note": "清醒",
+                "category": "work",
+                "source": "app",
+                "splitFromId": "b"
+              }
+            ]
+          }
+        },
+        {
+          "op": "summarize",
+          "atMs": 1794179040000,
+          "expect": {
+            "status": "running",
+            "totals": {
+              "mainSleepMs": 28800000,
+              "napMs": 60000,
+              "totalSleepMs": 28860000,
+              "awakeMs": 180000,
+              "targetAtMs": 1794236400000
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-open-reject-last-sleep",
+      "scope": "common",
+      "label": "open split cannot make the live tail a nap",
+      "seed": {
+        "cycleId": "cyc-open-r",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-open-r",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "split",
+          "atMs": 1794179040000,
+          "args": {
+            "segmentId": "b",
+            "expected": {
+              "id": "b",
+              "startAtMs": 1794178860000,
+              "endAtMs": 0,
+              "note": "",
+              "category": "unclassified"
+            },
+            "cuts": [1794178920000],
+            "parts": [
+              {
+                "note": "清醒",
+                "category": "work"
+              },
+              {
+                "note": "补记",
+                "category": "sleep"
+              }
+            ]
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-live-sleep-reject",
+      "scope": "common",
+      "label": "an open sleep segment cannot be split until the nap ends",
+      "seed": {
+        "cycleId": "cyc-live-sleep",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-live-sleep",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "sleep",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "split",
+          "atMs": 1794179040000,
+          "args": {
+            "segmentId": "b",
+            "expected": {
+              "id": "b",
+              "startAtMs": 1794178860000,
+              "endAtMs": 0,
+              "note": "",
+              "category": "sleep"
+            },
+            "cuts": [1794178920000],
+            "parts": [
+              {
+                "note": "",
+                "category": "daily"
+              },
+              {
+                "note": "",
+                "category": "work"
+              }
+            ]
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "sleep",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-stale",
+      "scope": "common",
+      "label": "split against the pre-edit snapshot rejects and keeps the newer note",
+      "seed": {
+        "cycleId": "cyc-stale",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-stale",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "edit",
+          "atMs": 1794179040000,
+          "args": {
+            "id": "b",
+            "note": "新",
+            "category": "unclassified"
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "新",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "split",
+          "atMs": 1794179040000,
+          "args": {
+            "segmentId": "b",
+            "expected": {
+              "id": "b",
+              "startAtMs": 1794178860000,
+              "endAtMs": 0,
+              "note": "",
+              "category": "unclassified"
+            },
+            "cuts": [1794178920000],
+            "parts": [
+              {
+                "note": "",
+                "category": "work"
+              },
+              {
+                "note": "",
+                "category": "daily"
+              }
+            ]
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "新",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-merge-closed",
+      "scope": "common",
+      "label": "merge two contiguous closed segments keeps first id, outer bounds, note and notification source",
+      "seed": {
+        "cycleId": "cyc-merge",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-merge",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "同一",
+            "category": "work",
+            "source": "notification"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 1794178920000,
+            "endMonoMs": 10120000,
+            "note": "同一",
+            "category": "daily",
+            "source": "notification"
+          },
+          {
+            "id": "c",
+            "seq": 3,
+            "startAtMs": 1794178920000,
+            "startMonoMs": 10120000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "merge",
+          "atMs": 1794179040000,
+          "args": {
+            "firstId": "a",
+            "secondId": "b",
+            "category": "daily"
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178920000,
+                "note": "同一",
+                "category": "daily",
+                "source": "notification"
+              },
+              {
+                "id": "c",
+                "seq": 2,
+                "startAtMs": 1794178920000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-merge-open",
+      "scope": "common",
+      "label": "merge into a running open tail stays open and keeps both notes",
+      "seed": {
+        "cycleId": "cyc-merge-open",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-merge-open",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "第一",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "第二",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "merge",
+          "atMs": 1794179040000,
+          "args": {
+            "firstId": "a",
+            "secondId": "b",
+            "category": "work"
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 0,
+                "note": "第一\n第二",
+                "category": "work",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-merge-gap-reject",
+      "scope": "common",
+      "label": "merge rejects pause gaps, reversed order and non-adjacent picks without mutation",
+      "seed": {
+        "cycleId": "cyc-merge-gap",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-merge-gap",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178920000,
+            "startMonoMs": 10120000,
+            "endAtMs": 1794178980000,
+            "endMonoMs": 10180000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "c",
+            "seq": 3,
+            "startAtMs": 1794178980000,
+            "startMonoMs": 10180000,
+            "endAtMs": 1794179040000,
+            "endMonoMs": 10240000,
+            "note": "",
+            "category": "daily",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "merge",
+          "atMs": 1794179040000,
+          "args": {
+            "firstId": "a",
+            "secondId": "b",
+            "category": "daily"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178920000,
+                "endAtMs": 1794178980000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "c",
+                "seq": 3,
+                "startAtMs": 1794178980000,
+                "endAtMs": 1794179040000,
+                "note": "",
+                "category": "daily",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "merge",
+          "atMs": 1794179040000,
+          "args": {
+            "firstId": "c",
+            "secondId": "b",
+            "category": "daily"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178920000,
+                "endAtMs": 1794178980000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "c",
+                "seq": 3,
+                "startAtMs": 1794178980000,
+                "endAtMs": 1794179040000,
+                "note": "",
+                "category": "daily",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "merge",
+          "atMs": 1794179040000,
+          "args": {
+            "firstId": "a",
+            "secondId": "c",
+            "category": "daily"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178920000,
+                "endAtMs": 1794178980000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "c",
+                "seq": 3,
+                "startAtMs": 1794178980000,
+                "endAtMs": 1794179040000,
+                "note": "",
+                "category": "daily",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-merge-open-nap-reject",
+      "scope": "common",
+      "label": "merge cannot turn an open nap into an awake category",
+      "seed": {
+        "cycleId": "cyc-merge-nap",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-merge-nap",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "sleep",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "merge",
+          "atMs": 1794179040000,
+          "args": {
+            "firstId": "a",
+            "secondId": "b",
+            "category": "daily"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "sleep",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-merge-open-awake-to-sleep-reject",
+      "scope": "common",
+      "label": "merge cannot turn an open awake tail into a nap",
+      "seed": {
+        "cycleId": "cyc-merge-awake",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-merge-awake",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "merge",
+          "atMs": 1794179040000,
+          "args": {
+            "firstId": "a",
+            "secondId": "b",
+            "category": "sleep"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "C-time",
+      "scope": "common",
+      "label": "summary at t+6h: main 8h, nap 2h, total 10h, awake 4h; TS base budget 16h vs Java nap-inclusive budget 14h",
+      "seed": {
+        "cycleId": "cyc-time",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-time",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "work",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794182400000,
+            "endMonoMs": 13600000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "nap",
+            "seq": 2,
+            "startAtMs": 1794182400000,
+            "startMonoMs": 13600000,
+            "endAtMs": 1794189600000,
+            "endMonoMs": 20800000,
+            "note": "",
+            "category": "sleep",
+            "source": "app"
+          },
+          {
+            "id": "daily",
+            "seq": 3,
+            "startAtMs": 1794193200000,
+            "startMonoMs": 24400000,
+            "endAtMs": 1794196800000,
+            "endMonoMs": 28000000,
+            "note": "",
+            "category": "daily",
+            "source": "app"
+          },
+          {
+            "id": "open",
+            "seq": 4,
+            "startAtMs": 1794196800000,
+            "startMonoMs": 28000000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "summarize",
+          "atMs": 1794200400000,
+          "expect": {
+            "status": "running",
+            "totals": {
+              "mainSleepMs": 28800000,
+              "napMs": 7200000,
+              "totalSleepMs": 36000000,
+              "awakeMs": 14400000,
+              "targetAtMs": 1794236400000
+            },
+            "ts": {
+              "categories": {
+                "work": 3600000,
+                "daily": 3600000,
+                "unclassified": 7200000
+              },
+              "awakeBudgetMs": 57600000
+            },
+            "java": {
+              "budgetMs": 50400000
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "J-life",
+      "scope": "java-only",
+      "label": "native lifecycle: lap note/source belongs to the closed segment, nap excluded from closedCount, restart keeps cycle target and gaps, close keeps notification pref",
+      "seed": null,
+      "steps": [
+        {
+          "op": "setNotificationsEnabled",
+          "atMs": 1794178800000,
+          "args": {
+            "enabled": false
+          },
+          "expect": {
+            "status": "idle",
+            "segments": [],
+            "java": {
+              "notificationsEnabled": false
+            }
+          }
+        },
+        {
+          "op": "startCycle",
+          "atMs": 1794178800000,
+          "args": {
+            "cycleId": "j-life",
+            "sleepAtMs": 1794150000000,
+            "wakeAtMs": 1794178800000
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@life-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "cycleId": "j-life",
+              "targetAtMs": 1794236400000,
+              "notificationsEnabled": false,
+              "closedCount": 0,
+              "napMs": 0,
+              "openStartMonoMs": 10000000,
+              "sessionIdNonEmpty": true
+            }
+          }
+        },
+        {
+          "op": "lap",
+          "atMs": 1794179100000,
+          "args": {
+            "note": "备注",
+            "source": "notification"
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@life-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794179100000,
+                "note": "备注",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@life-2",
+                "seq": 2,
+                "startAtMs": 1794179100000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "closedCount": 1,
+              "napMs": 0
+            }
+          }
+        },
+        {
+          "op": "lap",
+          "atMs": 1794179100000,
+          "args": {
+            "note": "重复",
+            "source": "notification"
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@life-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794179100000,
+                "note": "备注",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@life-2",
+                "seq": 2,
+                "startAtMs": 1794179100000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "closedCount": 1,
+              "napMs": 0
+            }
+          }
+        },
+        {
+          "op": "startNap",
+          "atMs": 1794179160000,
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@life-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794179100000,
+                "note": "备注",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@life-2",
+                "seq": 2,
+                "startAtMs": 1794179100000,
+                "endAtMs": 1794179160000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@life-3",
+                "seq": 3,
+                "startAtMs": 1794179160000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "sleep",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "closedCount": 2,
+              "napMs": 0
+            }
+          }
+        },
+        {
+          "op": "lap",
+          "atMs": 1794179160000,
+          "args": {
+            "note": "误按",
+            "source": "notification"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "@life-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794179100000,
+                "note": "备注",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@life-2",
+                "seq": 2,
+                "startAtMs": 1794179100000,
+                "endAtMs": 1794179160000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@life-3",
+                "seq": 3,
+                "startAtMs": 1794179160000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "sleep",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "endNap",
+          "atMs": 1794179760000,
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@life-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794179100000,
+                "note": "备注",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@life-2",
+                "seq": 2,
+                "startAtMs": 1794179100000,
+                "endAtMs": 1794179160000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@life-3",
+                "seq": 3,
+                "startAtMs": 1794179160000,
+                "endAtMs": 1794179760000,
+                "note": "",
+                "category": "sleep",
+                "source": "app"
+              },
+              {
+                "id": "@life-4",
+                "seq": 4,
+                "startAtMs": 1794179760000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "closedCount": 2,
+              "napMs": 600000
+            }
+          }
+        },
+        {
+          "op": "endSession",
+          "atMs": 1794179880000,
+          "expect": {
+            "status": "ended",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@life-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794179100000,
+                "note": "备注",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@life-2",
+                "seq": 2,
+                "startAtMs": 1794179100000,
+                "endAtMs": 1794179160000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@life-3",
+                "seq": 3,
+                "startAtMs": 1794179160000,
+                "endAtMs": 1794179760000,
+                "note": "",
+                "category": "sleep",
+                "source": "app"
+              },
+              {
+                "id": "@life-4",
+                "seq": 4,
+                "startAtMs": 1794179760000,
+                "endAtMs": 1794179880000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "closedCount": 3,
+              "napMs": 600000,
+              "targetAtMs": 1794236400000
+            }
+          }
+        },
+        {
+          "op": "restartSession",
+          "atMs": 1794180060000,
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@life-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794179100000,
+                "note": "备注",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@life-2",
+                "seq": 2,
+                "startAtMs": 1794179100000,
+                "endAtMs": 1794179160000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@life-3",
+                "seq": 3,
+                "startAtMs": 1794179160000,
+                "endAtMs": 1794179760000,
+                "note": "",
+                "category": "sleep",
+                "source": "app"
+              },
+              {
+                "id": "@life-4",
+                "seq": 4,
+                "startAtMs": 1794179760000,
+                "endAtMs": 1794179880000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@life-5",
+                "seq": 5,
+                "startAtMs": 1794180060000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "cycleId": "j-life",
+              "closedCount": 3,
+              "napMs": 600000,
+              "targetAtMs": 1794236400000,
+              "sessionIdChanged": true
+            }
+          }
+        },
+        {
+          "op": "reopenCheck",
+          "atMs": 1794180060000,
+          "expect": {
+            "status": "running",
+            "segments": [
+              {
+                "id": "@life-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794179100000,
+                "note": "备注",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@life-2",
+                "seq": 2,
+                "startAtMs": 1794179100000,
+                "endAtMs": 1794179160000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@life-3",
+                "seq": 3,
+                "startAtMs": 1794179160000,
+                "endAtMs": 1794179760000,
+                "note": "",
+                "category": "sleep",
+                "source": "app"
+              },
+              {
+                "id": "@life-4",
+                "seq": 4,
+                "startAtMs": 1794179760000,
+                "endAtMs": 1794179880000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@life-5",
+                "seq": 5,
+                "startAtMs": 1794180060000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "closeCycle",
+          "atMs": 1794180060000,
+          "expect": {
+            "status": "idle",
+            "persisted": true,
+            "segments": [],
+            "java": {
+              "cycleId": "",
+              "notificationsEnabled": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "J-mono-jump",
+      "scope": "java-only",
+      "label": "wall clock back-jump is corrected by the monotonic anchor; end/open share t+60000 and clockAnomaly is set",
+      "seed": null,
+      "steps": [
+        {
+          "op": "startCycle",
+          "atMs": 1794178800000,
+          "args": {
+            "cycleId": "j-mono",
+            "sleepAtMs": 1794150000000,
+            "wakeAtMs": 1794178800000
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@mono-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "openStartMonoMs": 10000000,
+              "bootId": "b1",
+              "clockAnomaly": false
+            }
+          }
+        },
+        {
+          "op": "lap",
+          "atMs": 1794175200000,
+          "args": {
+            "note": "",
+            "source": "app"
+          },
+          "monoMs": 10060000,
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@mono-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@mono-2",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "clockAnomaly": true,
+              "bootId": "b1",
+              "firstSegmentEndMonoMs": 10060000,
+              "openStartMonoMs": 10060000
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "J-mono-5000",
+      "scope": "java-only",
+      "label": "wall/mono divergence of exactly 5000ms is not flagged",
+      "seed": {
+        "cycleId": "cyc-mono-th",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-th",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "getState",
+          "atMs": 1794178805000,
+          "monoMs": 10000000,
+          "expect": {
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "clockAnomaly": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "J-mono-5001",
+      "scope": "java-only",
+      "label": "wall/mono divergence of 5001ms is flagged",
+      "seed": {
+        "cycleId": "cyc-mono-th",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-th",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "getState",
+          "atMs": 1794178805001,
+          "monoMs": 10000000,
+          "expect": {
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "clockAnomaly": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "J-reboot",
+      "scope": "java-only",
+      "label": "new boot ignores the old monotonic anchor and re-anchors the split tail on the current boot",
+      "seed": {
+        "cycleId": "j-reboot",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-reboot",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "lap",
+          "atMs": 1794178860000,
+          "args": {
+            "note": "",
+            "source": "app"
+          },
+          "monoMs": 1000,
+          "bootId": "b2",
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@rb-2",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "clockAnomaly": false,
+              "bootId": "b2",
+              "firstSegmentEndMonoMs": 1000,
+              "openStartMonoMs": 1000
+            }
+          }
+        },
+        {
+          "op": "split",
+          "atMs": 1794178920000,
+          "args": {
+            "cycleId": "j-reboot",
+            "segmentId": "@rb-2",
+            "expected": {
+              "id": "@rb-2",
+              "startAtMs": 1794178860000,
+              "endAtMs": 0,
+              "note": "",
+              "category": "unclassified"
+            },
+            "cuts": [1794178890000],
+            "parts": [
+              {
+                "note": "",
+                "category": "work"
+              },
+              {
+                "note": "",
+                "category": "daily"
+              }
+            ]
+          },
+          "monoMs": 61000,
+          "bootId": "b2",
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              },
+              {
+                "id": "@rb-2",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 1794178890000,
+                "note": "",
+                "category": "work",
+                "source": "app",
+                "splitFromId": "@rb-2"
+              },
+              {
+                "id": "@rb-3",
+                "seq": 3,
+                "startAtMs": 1794178890000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "daily",
+                "source": "app",
+                "splitFromId": "@rb-2"
+              }
+            ],
+            "java": {
+              "openStartMonoMs": 31000,
+              "bootId": "b2"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "J-fail",
+      "scope": "java-only",
+      "label": "store.put failure rejects lap/edit/split/startNap atomically, then retry succeeds after the store recovers",
+      "seed": {
+        "cycleId": "j-fail",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-fail",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "setFailWrites",
+          "atMs": 1794179040000,
+          "args": {
+            "enabled": true
+          },
+          "expect": {
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "lap",
+          "atMs": 1794179040000,
+          "args": {
+            "note": "x",
+            "source": "app"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "edit",
+          "atMs": 1794179040000,
+          "args": {
+            "id": "a",
+            "note": "y",
+            "category": "work"
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "split",
+          "atMs": 1794179040000,
+          "args": {
+            "cycleId": "j-fail",
+            "segmentId": "b",
+            "expected": {
+              "id": "b",
+              "startAtMs": 1794178860000,
+              "endAtMs": 0,
+              "note": "",
+              "category": "unclassified"
+            },
+            "cuts": [1794178920000],
+            "parts": [
+              {
+                "note": "",
+                "category": "daily"
+              },
+              {
+                "note": "",
+                "category": "work"
+              }
+            ]
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "startNap",
+          "atMs": 1794179040000,
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "setFailWrites",
+          "atMs": 1794179040000,
+          "args": {
+            "enabled": false
+          },
+          "expect": {
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "edit",
+          "atMs": 1794179040000,
+          "args": {
+            "id": "a",
+            "note": "y",
+            "category": "work"
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "y",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "J-start-bounds",
+      "scope": "java-only",
+      "label": "Java startCycle rejects wake>now and sleepAt<=0, but accepts a 30m and a 25h sleep that TS validateSleepInput rejects",
+      "seed": null,
+      "steps": [
+        {
+          "op": "startCycle",
+          "atMs": 1794178800000,
+          "args": {
+            "cycleId": "c",
+            "sleepAtMs": 1794150000000,
+            "wakeAtMs": 1794178800001
+          },
+          "expect": {
+            "reject": true,
+            "status": "idle",
+            "segments": []
+          }
+        },
+        {
+          "op": "startCycle",
+          "atMs": 1794178800000,
+          "args": {
+            "cycleId": "c",
+            "sleepAtMs": 0,
+            "wakeAtMs": 1794178800000
+          },
+          "expect": {
+            "reject": true,
+            "status": "idle",
+            "segments": []
+          }
+        },
+        {
+          "op": "startCycle",
+          "atMs": 1794178800000,
+          "args": {
+            "cycleId": "c",
+            "sleepAtMs": 1794177000000,
+            "wakeAtMs": 1794178800000
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@start-1",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "targetAtMs": 1794263400000
+            }
+          }
+        },
+        {
+          "op": "startCycle",
+          "atMs": 1794178800000,
+          "args": {
+            "cycleId": "c",
+            "sleepAtMs": 1794088800000,
+            "wakeAtMs": 1794178800000
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "@start-2",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ],
+            "java": {
+              "targetAtMs": 1794175200000
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "J-stale-notification",
+      "scope": "java-only",
+      "label": "a notification-bar lap closes the old snapshot, so a stale split and a wrong cycleId are rejected without losing the new segment",
+      "seed": {
+        "cycleId": "j-stale",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-stale",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "lap",
+          "atMs": 1794178980000,
+          "args": {
+            "note": "",
+            "source": "notification"
+          },
+          "expect": {
+            "status": "running",
+            "persisted": true,
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 1794178980000,
+                "note": "",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@stale-c",
+                "seq": 3,
+                "startAtMs": 1794178980000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "split",
+          "atMs": 1794179040000,
+          "args": {
+            "cycleId": "j-stale",
+            "segmentId": "b",
+            "expected": {
+              "id": "b",
+              "startAtMs": 1794178860000,
+              "endAtMs": 0,
+              "note": "",
+              "category": "unclassified"
+            },
+            "cuts": [1794178920000],
+            "parts": [
+              {
+                "note": "",
+                "category": "work"
+              },
+              {
+                "note": "",
+                "category": "daily"
+              }
+            ]
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 1794178980000,
+                "note": "",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@stale-c",
+                "seq": 3,
+                "startAtMs": 1794178980000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        },
+        {
+          "op": "split",
+          "atMs": 1794179040000,
+          "args": {
+            "cycleId": "wrong-cycle",
+            "segmentId": "@stale-c",
+            "expected": {
+              "id": "@stale-c",
+              "startAtMs": 1794178980000,
+              "endAtMs": 0,
+              "note": "",
+              "category": "unclassified"
+            },
+            "cuts": [1794179010000],
+            "parts": [
+              {
+                "note": "",
+                "category": "work"
+              },
+              {
+                "note": "",
+                "category": "daily"
+              }
+            ]
+          },
+          "expect": {
+            "reject": true,
+            "status": "running",
+            "segments": [
+              {
+                "id": "a",
+                "seq": 1,
+                "startAtMs": 1794178800000,
+                "endAtMs": 1794178860000,
+                "note": "",
+                "category": "work",
+                "source": "app"
+              },
+              {
+                "id": "b",
+                "seq": 2,
+                "startAtMs": 1794178860000,
+                "endAtMs": 1794178980000,
+                "note": "",
+                "category": "unclassified",
+                "source": "notification"
+              },
+              {
+                "id": "@stale-c",
+                "seq": 3,
+                "startAtMs": 1794178980000,
+                "endAtMs": 0,
+                "note": "",
+                "category": "unclassified",
+                "source": "app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "D-merge",
+      "scope": "divergence",
+      "label": "merge note/source: TS trims and prefers notification, Java keeps first note verbatim and first source",
+      "seed": {
+        "cycleId": "cyc-d-merge",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-d-merge",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": " x ",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 1794178920000,
+            "endMonoMs": 10120000,
+            "note": "x",
+            "category": "daily",
+            "source": "notification"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "merge",
+          "atMs": 1794179040000,
+          "args": {
+            "firstId": "a",
+            "secondId": "b",
+            "category": "daily"
+          },
+          "expect": {
+            "ts": {
+              "segments": [
+                {
+                  "id": "a",
+                  "seq": 1,
+                  "startAtMs": 1794178800000,
+                  "endAtMs": 1794178920000,
+                  "note": "x",
+                  "category": "daily",
+                  "source": "notification"
+                }
+              ]
+            },
+            "java": {
+              "segments": [
+                {
+                  "id": "a",
+                  "seq": 1,
+                  "startAtMs": 1794178800000,
+                  "endAtMs": 1794178920000,
+                  "note": " x \nx",
+                  "category": "daily",
+                  "source": "app"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "D-null-note",
+      "scope": "divergence",
+      "label": "null note: Java setSegmentDetails normalises to empty string, TS editSegment rejects non-string",
+      "seed": {
+        "cycleId": "cyc-d-null",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-d-null",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "a",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "b",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 0,
+            "endMonoMs": 0,
+            "note": "",
+            "category": "unclassified",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "edit",
+          "atMs": 1794179040000,
+          "args": {
+            "id": "a",
+            "note": null,
+            "category": "daily"
+          },
+          "expect": {
+            "ts": {
+              "reject": true,
+              "status": "running",
+              "segments": [
+                {
+                  "id": "a",
+                  "seq": 1,
+                  "startAtMs": 1794178800000,
+                  "endAtMs": 1794178860000,
+                  "note": "",
+                  "category": "work",
+                  "source": "app"
+                },
+                {
+                  "id": "b",
+                  "seq": 2,
+                  "startAtMs": 1794178860000,
+                  "endAtMs": 0,
+                  "note": "",
+                  "category": "unclassified",
+                  "source": "app"
+                }
+              ]
+            },
+            "java": {
+              "status": "running",
+              "persisted": true,
+              "segments": [
+                {
+                  "id": "a",
+                  "seq": 1,
+                  "startAtMs": 1794178800000,
+                  "endAtMs": 1794178860000,
+                  "note": "",
+                  "category": "daily",
+                  "source": "app"
+                },
+                {
+                  "id": "b",
+                  "seq": 2,
+                  "startAtMs": 1794178860000,
+                  "endAtMs": 0,
+                  "note": "",
+                  "category": "unclassified",
+                  "source": "app"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "D-overlap-summary",
+      "scope": "divergence",
+      "label": "overlapping work[0,2h] and nap[1h,3h]: TS clips overlap (nap 1h, awake 2h), Java sums nap (2h, awake 1h)",
+      "seed": {
+        "cycleId": "cyc-d-overlap",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "running",
+        "sessionId": "sess-d-overlap",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "work",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794186000000,
+            "endMonoMs": 17200000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "nap",
+            "seq": 2,
+            "startAtMs": 1794182400000,
+            "startMonoMs": 13600000,
+            "endAtMs": 1794189600000,
+            "endMonoMs": 20800000,
+            "note": "",
+            "category": "sleep",
+            "source": "app"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "op": "summarize",
+          "atMs": 1794189600000,
+          "expect": {
+            "ts": {
+              "totals": {
+                "mainSleepMs": 28800000,
+                "napMs": 3600000,
+                "totalSleepMs": 32400000,
+                "awakeMs": 7200000,
+                "targetAtMs": 1794236400000
+              },
+              "categories": {
+                "work": 7200000,
+                "unclassified": 0
+              }
+            },
+            "java": {
+              "totals": {
+                "mainSleepMs": 28800000,
+                "napMs": 7200000,
+                "totalSleepMs": 36000000,
+                "awakeMs": 3600000,
+                "targetAtMs": 1794236400000
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "TS-summary-closed",
+      "scope": "ts-only",
+      "label": "closed cycle summary caps at closedAtMs even when now is later; gap stays unclassified",
+      "seed": {
+        "cycleId": "cyc-ts-closed",
+        "sleepAtMs": 1794150000000,
+        "wakeAtMs": 1794178800000,
+        "targetAtMs": 1794236400000,
+        "status": "ended",
+        "sessionId": "sess-ts-closed",
+        "sessionStartedAtMs": 1794178800000,
+        "sessionStartedMonoMs": 10000000,
+        "bootId": "b1",
+        "notificationsEnabled": true,
+        "clockAnomaly": false,
+        "lastWallMs": 1794178800000,
+        "lastMonoMs": 10000000,
+        "segments": [
+          {
+            "id": "work",
+            "seq": 1,
+            "startAtMs": 1794178800000,
+            "startMonoMs": 10000000,
+            "endAtMs": 1794178860000,
+            "endMonoMs": 10060000,
+            "note": "",
+            "category": "work",
+            "source": "app"
+          },
+          {
+            "id": "nap",
+            "seq": 2,
+            "startAtMs": 1794178860000,
+            "startMonoMs": 10060000,
+            "endAtMs": 1794178980000,
+            "endMonoMs": 10180000,
+            "note": "",
+            "category": "sleep",
+            "source": "app"
+          },
+          {
+            "id": "daily",
+            "seq": 3,
+            "startAtMs": 1794179040000,
+            "startMonoMs": 10240000,
+            "endAtMs": 1794179100000,
+            "endMonoMs": 10300000,
+            "note": "",
+            "category": "daily",
+            "source": "app"
+          }
+        ],
+        "closedAtMs": 1794179100000
+      },
+      "steps": [
+        {
+          "op": "summarize",
+          "atMs": 1794214800000,
+          "expect": {
+            "ts": {
+              "totals": {
+                "mainSleepMs": 28800000,
+                "napMs": 120000,
+                "totalSleepMs": 28920000,
+                "awakeMs": 180000,
+                "targetAtMs": 1794236400000
+              },
+              "categories": {
+                "work": 60000,
+                "daily": 60000,
+                "unclassified": 60000
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,11 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import type { Cycle, Segment } from '../../src/data/store';
-import { changeCategories, defaultCategories, PRE_SLEEP_CATEGORY } from '../../src/core/categories';
-import { buildDayMetrics } from '../../src/core/history';
+import type { Cycle, Segment } from '../../src/modules/time-tracking/index';
 import {
-  buildCategoryDayTotals, buildCategoryPeriod, canNextPeriod, canPrevPeriod,
-  categoryEntries, entryBucketMs, percentMap, shiftPeriod, summaryRows,
-} from '../../src/core/categoryStats';
+  changeCategories,
+  defaultCategories,
+  PRE_SLEEP_CATEGORY,
+} from '../../src/modules/classification/index';
+import { buildDayMetrics } from '../../src/modules/analytics/index';
+import {
+  buildCategoryDayTotals,
+  buildCategoryPeriod,
+  canNextPeriod,
+  canPrevPeriod,
+  categoryEntries,
+  entryBucketMs,
+  percentMap,
+  shiftPeriod,
+  summaryRows,
+} from '../../src/modules/analytics/index';
 import { H, cycle } from '../fixtures';
 
 function local(month: number, day: number, hour = 0, minute = 0): number {
@@ -24,28 +35,55 @@ function day(id: string, wakeAtMs: number, segments: Segment[], closedAtMs: numb
   };
 }
 function seg(id: string, startMs: number, endMs: number, category: string, note = ''): Segment {
-  return { id, seq: 1, startAtMs: startMs, endAtMs: endMs, category: category as Segment['category'], note, source: 'app' };
+  return {
+    id,
+    seq: 1,
+    startAtMs: startMs,
+    endAtMs: endMs,
+    category: category as Segment['category'],
+    note,
+    source: 'app',
+  };
 }
 
 const now = local(11, 12, 12);
 const cycles = [
-  day('d9', local(11, 9, 8), [
-    seg('w9', local(11, 9, 8), local(11, 9, 10), 'work'),
-    seg('n9', local(11, 9, 10), local(11, 9, 11), 'daily'),
-    seg('p9', local(11, 9, 11), local(11, 9, 11, 30), PRE_SLEEP_CATEGORY),
-  ], local(11, 9, 11, 30)),
-  day('d10', local(11, 10, 8), [
-    seg('w10', local(11, 10, 8), local(11, 10, 11), 'work'),
-    seg('nap10', local(11, 10, 11), local(11, 10, 12), 'sleep'),
-  ], local(11, 10, 12)),
-  day('d3', local(11, 3, 8), [seg('w3', local(11, 3, 8), local(11, 3, 9), 'work')], local(11, 3, 9)),
+  day(
+    'd9',
+    local(11, 9, 8),
+    [
+      seg('w9', local(11, 9, 8), local(11, 9, 10), 'work'),
+      seg('n9', local(11, 9, 10), local(11, 9, 11), 'daily'),
+      seg('p9', local(11, 9, 11), local(11, 9, 11, 30), PRE_SLEEP_CATEGORY),
+    ],
+    local(11, 9, 11, 30),
+  ),
+  day(
+    'd10',
+    local(11, 10, 8),
+    [
+      seg('w10', local(11, 10, 8), local(11, 10, 11), 'work'),
+      seg('nap10', local(11, 10, 11), local(11, 10, 12), 'sleep'),
+    ],
+    local(11, 10, 12),
+  ),
+  day(
+    'd3',
+    local(11, 3, 8),
+    [seg('w3', local(11, 3, 8), local(11, 3, 9), 'work')],
+    local(11, 3, 9),
+  ),
 ];
 const days = buildDayMetrics(cycles, now);
 
 describe('分类统计聚合', () => {
   it('按起床日合计，多周期相加，补觉与主睡眠不进入分类', () => {
     const totals = buildCategoryDayTotals(days, now);
-    expect(totals.get('2026-11-09')?.categoryMs).toMatchObject({ work: 2 * H, daily: 1 * H, [PRE_SLEEP_CATEGORY]: 0.5 * H });
+    expect(totals.get('2026-11-09')?.categoryMs).toMatchObject({
+      work: 2 * H,
+      daily: 1 * H,
+      [PRE_SLEEP_CATEGORY]: 0.5 * H,
+    });
     expect(totals.get('2026-11-10')?.categoryMs).toMatchObject({ work: 3 * H });
     expect(totals.get('2026-11-10')?.categoryMs.sleep).toBeUndefined();
     expect(totals.get('2026-11-10')?.totalMs).toBe(3 * H);
@@ -86,7 +124,9 @@ describe('分类统计聚合', () => {
 
   it('百分比用最大余数法，合计恰好 100%', () => {
     const entries = [
-      { id: 'a', ms: 5 * H }, { id: 'b', ms: H }, { id: 'c', ms: 0.5 * H },
+      { id: 'a', ms: 5 * H },
+      { id: 'b', ms: H },
+      { id: 'c', ms: 0.5 * H },
     ];
     const pct = percentMap(entries, 6.5 * H);
     expect([...pct.values()].reduce((sum, n) => sum + n, 0)).toBe(100);
@@ -111,9 +151,21 @@ describe('分类统计聚合', () => {
 describe('v0.8 大类与细分统计', () => {
   function hierarchy() {
     let catalog = defaultCategories();
-    catalog = changeCategories(catalog, { kind: 'add', id: 'cat-jp', name: '学日语', parentId: 'work' }, new Set());
-    catalog = changeCategories(catalog, { kind: 'add', id: 'cat-mech', name: '机械', parentId: 'work' }, new Set());
-    return changeCategories(catalog, { kind: 'setParent', id: 'daily', parentId: 'work' }, new Set());
+    catalog = changeCategories(
+      catalog,
+      { kind: 'add', id: 'cat-jp', name: '学日语', parentId: 'work' },
+      new Set(),
+    );
+    catalog = changeCategories(
+      catalog,
+      { kind: 'add', id: 'cat-mech', name: '机械', parentId: 'work' },
+      new Set(),
+    );
+    return changeCategories(
+      catalog,
+      { kind: 'setParent', id: 'daily', parentId: 'work' },
+      new Set(),
+    );
   }
   const period = buildCategoryPeriod(days, 'week', local(11, 10, 9), now);
 
@@ -127,7 +179,11 @@ describe('v0.8 大类与细分统计', () => {
   it('全部细分包含大类自身时间桶和「大类 · 小类」路径', () => {
     const entries = categoryEntries(period, hierarchy(), 'child');
     const byId = new Map(entries.map((e) => [e.id, e]));
-    expect(byId.get('work')).toMatchObject({ name: '工作（未细分）', ms: 5 * H, parentBucket: true });
+    expect(byId.get('work')).toMatchObject({
+      name: '工作（未细分）',
+      ms: 5 * H,
+      parentBucket: true,
+    });
     expect(byId.get('daily')).toMatchObject({ name: '工作 · 日常', ms: H, parentName: '工作' });
     expect(byId.get(PRE_SLEEP_CATEGORY)?.ms).toBe(0.5 * H);
     expect(entries.reduce((sum, e) => sum + e.ms, 0)).toBe(period.totalMs);
@@ -151,21 +207,32 @@ describe('v0.8 大类与细分统计', () => {
 
 describe('今日页分类汇总块', () => {
   const catalog = changeCategories(
-    changeCategories(defaultCategories(), { kind: 'add', id: 'cat-jp', name: '学日语', parentId: 'work' }, new Set()),
+    changeCategories(
+      defaultCategories(),
+      { kind: 'add', id: 'cat-jp', name: '学日语', parentId: 'work' },
+      new Set(),
+    ),
     { kind: 'add', id: 'cat-mech', name: '机械', parentId: 'work' },
     new Set(),
   );
 
   it('顶层只列大类：小标签时间并入大类，零时长隐藏，未分类保留', () => {
     const rows = summaryRows({ work: H, 'cat-jp': 2 * H, daily: 3 * H }, catalog);
-    expect(rows.map((r) => [r.id, r.ms])).toEqual([['work', 3 * H], ['daily', 3 * H], ['unclassified', 0]]);
+    expect(rows.map((r) => [r.id, r.ms])).toEqual([
+      ['work', 3 * H],
+      ['daily', 3 * H],
+      ['unclassified', 0],
+    ]);
     expect(rows[0]).toMatchObject({ label: '工作', drillable: true });
     expect(rows[1]).toMatchObject({ label: '日常', drillable: false });
   });
 
   it('下钻只看该大类细分：未细分桶在前，零时长小标签隐藏，顺序跟目录', () => {
     const rows = summaryRows({ work: H, 'cat-jp': 2 * H, daily: 3 * H }, catalog, 'work');
-    expect(rows.map((r) => [r.label, r.ms])).toEqual([['工作（未细分）', H], ['学日语', 2 * H]]);
+    expect(rows.map((r) => [r.label, r.ms])).toEqual([
+      ['工作（未细分）', H],
+      ['学日语', 2 * H],
+    ]);
     expect(rows[0]).toMatchObject({ parentBucket: true, drillable: false });
   });
 

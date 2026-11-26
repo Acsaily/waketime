@@ -9,7 +9,7 @@ import {
   remainingMs,
   splitByDay,
   validateSleepInput,
-} from '../../src/core/time';
+} from '../../src/modules/time-tracking/index';
 
 const base = new Date(2026, 9, 25, 23, 30, 0).getTime(); // 2026-10-25 23:30 本地
 const wake = base + 7.5 * 3600_000; // 次日 07:00
@@ -80,7 +80,9 @@ describe('validateSleepInput', () => {
   });
 
   it('跨度超过 24h → too-long', () => {
-    expect(validateSleepInput({ sleepAtMs: base - DAY_MS, wakeAtMs: base + 3600_000 }, now)).toBe('too-long');
+    expect(validateSleepInput({ sleepAtMs: base - DAY_MS, wakeAtMs: base + 3600_000 }, now)).toBe(
+      'too-long',
+    );
   });
 
   it('正常录入返回 null', () => {
