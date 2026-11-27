@@ -41,3 +41,5 @@ export { readRestoreBackup, categoryConflicts, buildRestoredData } from './resto
 export type { RestoreBackup, RestoreMode, CategoryResolutions, CategoryConflict } from './restore';
 export { buildBackupJson, buildDayTxt, dayFileName, categorySummaryText } from './exportFormat';
 export { buildPdfBlocks } from './pdfDoc';
+export { periodRange, previewPeriod } from './periodExport';
+export type { DateRange, PeriodPreset, PeriodExportKind } from './periodExport';

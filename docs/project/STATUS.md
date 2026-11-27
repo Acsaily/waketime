@@ -7,6 +7,8 @@ status: refactor/eng 源码及本地严格验收通过；用户确认按现有�
 
 ## Stage
 
+2026-11-27 增量分支 `feat/period-export-card-spacing`（基于 `refactor/eng` / `7159ce7`）：修复统计面板零间距，历史面板保持 12px；设置新增按起床日、含首尾的日期范围预览与 TXT/PDF/JSON 导出（快捷项填充可编辑日期）；PR #2 体验反馈后改为统一导出卡片，单日按需精确选择作息周期，单周期文件口径保持，全量备份移至独立数据区。源代码、本地严格质量门及浏览器实际下载验证通过；原生 PDF 渲染/系统分享未实测。本轮等待独立 PR 评审，不改变已发布版本或 schema。详见 [增量验收记录](../outcomes/2026-11-27-period-export-card-spacing.md)。
+
 2026-11-26 至 27：`refactor/eng` 从 v0.9.0 (`8307835`) 开始，用户确认 27 项工程决策并启动 Dynamic Workflow；源代码重构已通过独立验收。目标结构和规范见 [架构总览](../architecture/overview.md)、[领域语言](../../GLOSSARY.md)、[计划](../superpowers/plans/2026-11-26-engineering-refactor.md) 与 [调研决策](../outcomes/2026-11-26-engineering-architecture-research.md)。
 
 - **源码与本地验收通过**：三个领域模块、独立应用状态与队列、平台适配、UI Feature 迁移及旧路径清理。`node scripts/verify.mjs strict` exit 0：229 TS 通过/1 私人样本显式跳过；9 属性测试、26 组合成差分零差异、6 浏览器 E2E、36 JUnit 通过，严格架构零违规并识别 34 个反例，lint/format 通过。26 对新旧画面对照无实质样式或布局差异。

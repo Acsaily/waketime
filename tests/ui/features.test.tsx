@@ -84,6 +84,7 @@ function fakeApi() {
     openNotificationSettings: noop(),
     openAppSettings: noop(),
     exportRecords: vi.fn(async () => '合成导出成功'),
+    exportPeriod: vi.fn(async () => '合成周期导出成功'),
     readRestoreFile: vi.fn(async () => ({ cycles: [], categories: [] })),
     screenshotUrl: vi.fn(async () => null),
     feedback: vi.fn(),
@@ -219,6 +220,52 @@ describe('feature UI and application boundary', () => {
     );
   });
 
+  it('fills editable period dates, previews records and shares the export lock', async () => {
+    const { api } = fakeApi();
+    const pending = deferred<string>();
+    api.exportRecords.mockReturnValueOnce(pending.promise);
+    render(<Settings api={api} />);
+    expect(screen.getAllByRole('button', { name: '导出 JSON' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: '周期 JSON' })).toBeNull();
+    const panel = screen.getByRole('region', { name: '导出与备份' });
+    expect(within(panel).queryByRole('button', { name: '全量备份 JSON' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '最近 7 天' }));
+    const start = screen.getByLabelText('开始日期');
+    const end = screen.getByLabelText('结束日期');
+    const day = new Date(T).getDate();
+    const key = `2026-11-${String(day).padStart(2, '0')}`;
+    fireEvent.change(start, { target: { value: key } });
+    fireEvent.change(end, { target: { value: key } });
+    expect(screen.getByText('记录 1 天 · 1 个周期')).toBeVisible();
+    expect(screen.getByText(/1 个周期尚未结束/)).toBeVisible();
+    const button = screen.getByRole('button', { name: '导出 JSON' });
+    fireEvent.click(button);
+    expect(api.exportRecords).toHaveBeenCalledWith('json', 'synthetic', api.now);
+    expect(screen.getByRole('button', { name: '全量备份 JSON' })).toBeDisabled();
+    expect(start).toBeDisabled();
+    await act(async () => pending.resolve('周期成功'));
+    expect(screen.getByText('周期成功')).toBeVisible();
+    fireEvent.change(start, { target: { value: '2026-12-01' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('开始日期不能晚于结束日期');
+    expect(start).toHaveAttribute('aria-invalid', 'true');
+    expect(button).toBeDisabled();
+    expect(screen.getByRole('button', { name: '全量备份 JSON' })).toBeEnabled();
+  });
+
+  it('keeps full backup available without recorded cycles and independent of an invalid range', async () => {
+    const { api } = fakeApi();
+    api.data.cycles = [];
+    render(<Settings api={api} />);
+    const backup = within(screen.getByRole('region', { name: '数据' })).getByRole('button', {
+      name: '全量备份 JSON',
+    });
+    expect(screen.getByRole('button', { name: '导出 JSON' })).toBeDisabled();
+    expect(backup).toBeEnabled();
+    fireEvent.click(backup);
+    await waitFor(() => expect(api.exportRecords).toHaveBeenCalledWith('backup'));
+    await waitFor(() => expect(backup).toBeEnabled());
+  });
+
   it('settings use application-owned permission and export operations with retry feedback', async () => {
     const { api } = fakeApi();
     const request = deferred<{ granted: boolean }>();
@@ -237,8 +284,11 @@ describe('feature UI and application boundary', () => {
     await waitFor(() => expect(api.setNotificationsEnabled).toHaveBeenCalledWith(false));
     expect(api.updateSettings).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.getByText(/常驻通知已关闭/)).toBeVisible());
+    const key = `2026-11-${String(new Date(T).getDate()).padStart(2, '0')}`;
+    fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: key } });
+    fireEvent.change(screen.getByLabelText('结束日期'), { target: { value: key } });
     fireEvent.click(screen.getByRole('button', { name: '导出 TXT' }));
-    expect(api.exportRecords).toHaveBeenCalledWith('txt', 'synthetic');
+    expect(api.exportRecords).toHaveBeenCalledWith('txt', 'synthetic', api.now);
     expect(screen.getByRole('button', { name: '导出 PDF' })).toBeDisabled();
     await act(async () => {
       exported.reject(new Error('合成导出失败'));

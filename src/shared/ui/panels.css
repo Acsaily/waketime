@@ -30,8 +30,16 @@
   margin: -4px 0 0;
 }
 
+/* 面板内的块沿用 12px 卡片节奏；统计页的周期条与卡片此前紧贴（外边距为 0），
+   与历史页的卡片间距不一致。 */
 .history-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   min-width: 0;
+}
+.history-panel > .hero-card.empty {
+  margin-top: 0;
 }
 .history-panel-left {
   animation: history-in-left 0.24s cubic-bezier(0.22, 0.72, 0.26, 1);

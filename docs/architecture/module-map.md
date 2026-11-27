@@ -71,6 +71,7 @@ updated: 2026-11-27
 | `restore.ts`           | 备份读取、分类冲突、覆盖/合并、活动周期保护、空备份拒绝                                                                        |
 | `exportFormat.ts`      | TXT、单日/全量 JSON、分类汇总文本、派生摘要                                                                                    |
 | `pdfDoc.ts`            | PDF 段落块构建（渲染由原生导出）                                                                                               |
+| `periodExport.ts`      | 本地起床日范围、日期快捷填充、预览及周期 TXT/JSON/PDF 组合导出                                                                 |
 | `index.ts`             | 应用层公开接口；UI 只能从这里引用                                                                                              |
 
 允许依赖：`modules/*/index.ts`、Node/浏览器都有的标准类型。**不得**依赖 React、UI、具体适配器、legacy `data/`、`native/`、`state/`、`export/`、`core/`。
@@ -104,7 +105,7 @@ updated: 2026-11-27
 | `today/`      | `Today.tsx`、`SleepDialog.tsx`、`TodayCategorySummary.tsx`、`today.css`                            | `AppApi`、模块公开查询/格式化、`shared/ui`           |
 | `history/`    | `History.tsx`、`HistoryWeekPanel.tsx`、`HistoryMonthPanel.tsx`、`HistoryCharts.tsx`、`history.css` | `AppApi`、`analytics`、`shared/ui`                   |
 | `statistics/` | `Stats.tsx`、`CategoryStatsPanel.tsx`、`CategoryManager.tsx`、`statistics.css`                     | `AppApi`、`analytics`、`classification`、`shared/ui` |
-| `settings/`   | `Settings.tsx`、`Export.tsx`、`CycleSummary.tsx`、`settings.css`                                   | `AppApi`、`application` 的恢复/冲突类型              |
+| `settings/`   | `Settings.tsx`、`Export.tsx`（统一入口）、`CycleSummary.tsx`、`settings.css`                       | `AppApi`、`application` 的恢复/冲突类型              |
 
 UI 不直接调用文件、计时、存储插件；所有写入走 `AppApi` 操作。显示格式化可以来自模块公开函数，但不在 UI 重新实现业务规则。
 

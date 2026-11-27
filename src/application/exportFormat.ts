@@ -61,6 +61,7 @@ export function buildDayTxt(
   allCycles: Cycle[] = [cycle],
   categories: CategoryDefinition[] = defaultCategories(),
   now: () => number = Date.now,
+  scope: 'all' | 'range' = 'all',
 ): string {
   const segs = cycle.session?.segments ?? [];
   const nowMs = now();
@@ -121,7 +122,11 @@ export function buildDayTxt(
           (d.driftMs > 0 ? '（超时/熬夜）' : d.driftMs < 0 ? '（提前睡/缩减）' : '（刚好）'),
       );
     } else {
-      lines.push('相对参考截止：还没有下一个周期，无法计算（等下一次录入后自动补上）');
+      lines.push(
+        scope === 'range'
+          ? '相对参考截止：所选范围内没有下一周期，无法计算'
+          : '相对参考截止：还没有下一个周期，无法计算（等下一次录入后自动补上）',
+      );
     }
     const s = summarizeTrend(trend);
     lines.push(

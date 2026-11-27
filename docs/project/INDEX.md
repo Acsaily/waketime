@@ -20,6 +20,8 @@ template: meta-codex-land/minimal@0.1.0
 - [ADR](../adr/0001-domain-first-modular-monolith.md) / [实施计划](../superpowers/plans/2026-11-26-engineering-refactor.md)
 - [验收记录与后续缺口](../outcomes/2026-11-27-engineering-refactor-acceptance.md)：严格本地门、真实生产 JSON 差分、MuMu 同测试签名升级与核心 E2E 通过；剩余系统交互暂缓。候选 `waketime-0.9.0-eng-debug.apk` 仅供测试，正式签名缺失，尚未发布。
 
+增量工作：`feat/period-export-card-spacing` 基于 `refactor/eng`，新增周期导出与统计面板卡片间距修复。详见 [设计与验收](../outcomes/2026-11-27-period-export-card-spacing.md)。
+
 ## 历史焦点（v0.6.0–v0.9.0）
 
 v0.6.0 历史页已改为「周趋势 / 每日明细」两块面板并同签名覆盖安装；真机记录 15 周期 / 124 段逐段零变化（原有 1 条零时长段被清理），用户已确认新历史页正常。2026-11-14 已按确认方案实施 v0.7.0：独立统计页、导出移入设置、分类管理进统计页、睡前时间（待分配）、分段刻度盘/合并滑条/计次反馈；本机 105 用例、类型检查与构建通过，浏览器 375/360 与模拟器升级验证通过；真机 Redmi Note 12 Turbo 覆盖安装后 19 周期 / 163 段逐段 0 变化，并修复长屏底栏被图表遮挡的问题。实现记录 `docs/outcomes/2026-11-14-v070-implementation.md`。

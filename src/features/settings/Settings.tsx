@@ -15,6 +15,7 @@ export function Settings({ api }: { api: AppApi }) {
   const [newWord, setNewWord] = useState('');
   const [permMsg, setPermMsg] = useState<Message>(null);
   const [dataMsg, setDataMsg] = useState<Message>(null);
+  const [exportMsg, setExportMsg] = useState<Message>(null);
   const [feedbackMsg, setFeedbackMsg] = useState<Message>(null);
   const [pendingRestore, setPendingRestore] = useState<RestoreBackup | null>(null);
   const [resolutions, setResolutions] = useState<CategoryResolutions>({});
@@ -26,16 +27,28 @@ export function Settings({ api }: { api: AppApi }) {
   const locked = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const perform = async (target: 'permission' | 'data', action: () => Promise<string>) => {
+  const perform = async (
+    target: 'permission' | 'data' | 'export',
+    action: () => Promise<string>,
+  ) => {
     if (locked.current) return;
     locked.current = true;
     setBusy(true);
-    const show = target === 'permission' ? setPermMsg : setDataMsg;
-    show(null);
+    const show =
+      target === 'permission' ? setPermMsg : target === 'data' ? setDataMsg : setExportMsg;
+    if (target !== 'permission') {
+      setExportMsg(null);
+      setDataMsg(null);
+    } else show(null);
     try {
       show({ text: await action(), error: false });
     } catch (e) {
-      show({ text: '操作失败：' + (e instanceof Error ? e.message : String(e)), error: true });
+      show({
+        text:
+          (target === 'export' ? '导出失败：' : '操作失败：') +
+          (e instanceof Error ? e.message : String(e)),
+        error: true,
+      });
     } finally {
       locked.current = false;
       setBusy(false);
@@ -67,10 +80,7 @@ export function Settings({ api }: { api: AppApi }) {
   };
 
   const onClear = () => {
-    if (
-      locked.current ||
-      !window.confirm('清空本机所有记录？建议先在下方「导出与备份」做一次全量备份。')
-    )
+    if (locked.current || !window.confirm('清空本机所有记录？建议先在「数据」做一次全量备份。'))
       return;
     void perform('data', async () => {
       await api.clearAll();
@@ -279,17 +289,30 @@ export function Settings({ api }: { api: AppApi }) {
         ) : null}
       </div>
 
-      <ExportPanel api={api} />
+      <ExportPanel
+        api={api}
+        busy={busy}
+        message={exportMsg}
+        onChange={() => setExportMsg(null)}
+        onExport={(action) => void perform('export', action)}
+      />
 
-      <div className="section">
+      <section className="section" aria-label="数据">
         <div className="section-head">
           <span>数据</span>
         </div>
         <p className="hint">
           所有记录只存在这台手机里（应用私有目录），保存时会保留备份。
-          <strong>卸载前请先在「导出与备份」做一次全量备份</strong>，否则数据会跟着 App 一起删除。
+          <strong>卸载前请先做一次全量备份</strong>，否则数据会跟着 App 一起删除。
         </p>
         <div className="buttons-grid">
+          <button
+            className="btn"
+            disabled={busy}
+            onClick={() => void perform('data', () => api.exportRecords('backup'))}
+          >
+            全量备份 JSON
+          </button>
           <button className="btn" disabled={busy} onClick={() => fileRef.current?.click()}>
             从备份恢复
           </button>
@@ -375,7 +398,7 @@ export function Settings({ api }: { api: AppApi }) {
             {dataMsg.text}
           </p>
         ) : null}
-      </div>
+      </section>
       {busy ? (
         <p className="hint" role="status">
           正在处理，请稍候…

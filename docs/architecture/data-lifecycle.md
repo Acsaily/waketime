@@ -124,12 +124,14 @@ Android 文件实现见 [recordStore.ts](../../src/infrastructure/recordStore.ts
 
 ## 导出
 
-`exportRecords` 从当前快照读取，不刷新、不写记录：
+`exportRecords` 从当前快照读取，不刷新、不写记录。统一导出卡片在单日仅一周期或明确选择某周期时调用此入口，并传入预览时刻；全量备份在独立「数据」区调用，使用原时钟与全量数据：
 
 - TXT：单日时间轴、睡眠、预算、参考截止、分类汇总、趋势/超时、无备注段数。
 - JSON：单日周期 + 设置 + 派生摘要（仍是 `buildBackupJson` 的形状）。
 - 全量备份 JSON：`schemaVersion`、`appVersion`、`exportedAtMs`、`settings`、`cycles`、`cycleSummaries`、`trend`、`trendSummary`。
 - PDF：原生 `PdfExporter` 渲染 `buildPdfBlocks` 的块。
+
+`exportPeriod` 同样只读。范围按本地起床日筛选（含首尾日、同日全部周期、跨午夜不截断），预览与文件复用 `previewPeriod` 及同一统计时刻。TXT/PDF 组合选中周期明细及范围摘要，JSON 复用 schema 3 的备份形状，仅包含选中周期，新增 `exportRange` 标记起止日期与起床日口径；趋势只使用范围内记录。非法或空范围拒绝生成文件。周期导出不能替代全量备份。
 
 全量备份**不等于**原生计时 XML/SharedPreferences 或截图的完整备份；原生活动状态连续性要靠原生状态测试和覆盖安装验证。
 

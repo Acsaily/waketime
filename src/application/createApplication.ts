@@ -34,6 +34,7 @@ import type {
 } from './ports';
 import { buildBackupJson, buildDayTxt, dayFileName } from './exportFormat';
 import { buildPdfBlocks } from './pdfDoc';
+import { buildPeriodExport, type DateRange, type PeriodExportKind } from './periodExport';
 
 export interface NewSleepInput {
   wakeAtMs: number;
@@ -420,12 +421,17 @@ export function createApplication({
     if (!isNativePlatform) throw new Error('系统设置只能在手机上打开');
     await device.openAppSettings();
   };
-  const exportRecords = async (kind: ExportKind, cycleId?: string): Promise<string> => {
+  const exportRecords = async (
+    kind: ExportKind,
+    cycleId?: string,
+    nowMs?: number,
+  ): Promise<string> => {
+    const exportClock = () => nowMs ?? clock.now();
     const { data } = snapshot;
     if (kind === 'backup') {
-      const text = buildBackupJson(data.cycles, data.settings, () => clock.now());
+      const text = buildBackupJson(data.cycles, data.settings, exportClock);
       await files.shareTextFile(
-        `waketime-backup-${new Date(clock.now()).toISOString().slice(0, 10)}.json`,
+        `waketime-backup-${new Date(exportClock()).toISOString().slice(0, 10)}.json`,
         text,
       );
       return '已生成全量备份，选择保存位置或发给文件传输助手';
@@ -435,24 +441,39 @@ export function createApplication({
     if (kind === 'txt') {
       await files.shareTextFile(
         dayFileName(cycle.id, 'txt'),
-        buildDayTxt(cycle, data.cycles, data.settings.categories, () => clock.now()),
+        buildDayTxt(cycle, data.cycles, data.settings.categories, exportClock),
       );
       return `已生成 ${cycle.id} 的 TXT`;
     }
     if (kind === 'json') {
       await files.shareTextFile(
         dayFileName(cycle.id, 'json'),
-        buildBackupJson([cycle], data.settings, () => clock.now()),
+        buildBackupJson([cycle], data.settings, exportClock),
       );
       return `已生成 ${cycle.id} 的 JSON`;
     }
     if (!isNativePlatform) throw new Error('PDF 只能在手机上生成（浏览器里没有原生渲染）');
     const res = await files.exportPdf({
       filename: dayFileName(cycle.id, 'pdf'),
-      blocks: buildPdfBlocks(cycle, data.cycles, data.settings.categories, () => clock.now()),
+      blocks: buildPdfBlocks(cycle, data.cycles, data.settings.categories, exportClock),
       share: true,
     });
     return `已生成 PDF（${Math.round(res.size / 1024)} KB），正在打开分享面板…`;
+  };
+  const exportPeriod = async (
+    kind: PeriodExportKind,
+    range: DateRange,
+    nowMs: number,
+  ): Promise<string> => {
+    const { data } = snapshot;
+    const output = buildPeriodExport(kind, data.cycles, data.settings, range, nowMs);
+    if ('text' in output) {
+      await files.shareTextFile(output.filename, output.text);
+      return `已生成周期 ${kind.toUpperCase()}`;
+    }
+    if (!isNativePlatform) throw new Error('PDF 只能在手机上生成（浏览器里没有原生渲染）');
+    const res = await files.exportPdf({ ...output, share: true });
+    return `已生成周期 PDF（${Math.round(res.size / 1024)} KB），正在打开分享面板…`;
   };
   const readRestoreFile = async (file: RestoreFileInput) =>
     readRestoreBackup(JSON.parse(await file.text()), () => clock.now());
@@ -488,6 +509,7 @@ export function createApplication({
     openNotificationSettings,
     openAppSettings,
     exportRecords,
+    exportPeriod,
     readRestoreFile,
     screenshotUrl,
     feedback,
