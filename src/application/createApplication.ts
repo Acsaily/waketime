@@ -421,12 +421,17 @@ export function createApplication({
     if (!isNativePlatform) throw new Error('系统设置只能在手机上打开');
     await device.openAppSettings();
   };
-  const exportRecords = async (kind: ExportKind, cycleId?: string): Promise<string> => {
+  const exportRecords = async (
+    kind: ExportKind,
+    cycleId?: string,
+    nowMs?: number,
+  ): Promise<string> => {
+    const exportClock = () => nowMs ?? clock.now();
     const { data } = snapshot;
     if (kind === 'backup') {
-      const text = buildBackupJson(data.cycles, data.settings, () => clock.now());
+      const text = buildBackupJson(data.cycles, data.settings, exportClock);
       await files.shareTextFile(
-        `waketime-backup-${new Date(clock.now()).toISOString().slice(0, 10)}.json`,
+        `waketime-backup-${new Date(exportClock()).toISOString().slice(0, 10)}.json`,
         text,
       );
       return '已生成全量备份，选择保存位置或发给文件传输助手';
@@ -436,21 +441,21 @@ export function createApplication({
     if (kind === 'txt') {
       await files.shareTextFile(
         dayFileName(cycle.id, 'txt'),
-        buildDayTxt(cycle, data.cycles, data.settings.categories, () => clock.now()),
+        buildDayTxt(cycle, data.cycles, data.settings.categories, exportClock),
       );
       return `已生成 ${cycle.id} 的 TXT`;
     }
     if (kind === 'json') {
       await files.shareTextFile(
         dayFileName(cycle.id, 'json'),
-        buildBackupJson([cycle], data.settings, () => clock.now()),
+        buildBackupJson([cycle], data.settings, exportClock),
       );
       return `已生成 ${cycle.id} 的 JSON`;
     }
     if (!isNativePlatform) throw new Error('PDF 只能在手机上生成（浏览器里没有原生渲染）');
     const res = await files.exportPdf({
       filename: dayFileName(cycle.id, 'pdf'),
-      blocks: buildPdfBlocks(cycle, data.cycles, data.settings.categories, () => clock.now()),
+      blocks: buildPdfBlocks(cycle, data.cycles, data.settings.categories, exportClock),
       share: true,
     });
     return `已生成 PDF（${Math.round(res.size / 1024)} KB），正在打开分享面板…`;

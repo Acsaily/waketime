@@ -124,7 +124,7 @@ Android 文件实现见 [recordStore.ts](../../src/infrastructure/recordStore.ts
 
 ## 导出
 
-`exportRecords` 从当前快照读取，不刷新、不写记录：
+`exportRecords` 从当前快照读取，不刷新、不写记录。统一导出卡片在单日仅一周期或明确选择某周期时调用此入口，并传入预览时刻；全量备份在独立「数据」区调用，使用原时钟与全量数据：
 
 - TXT：单日时间轴、睡眠、预算、参考截止、分类汇总、趋势/超时、无备注段数。
 - JSON：单日周期 + 设置 + 派生摘要（仍是 `buildBackupJson` 的形状）。

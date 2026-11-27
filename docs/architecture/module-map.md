@@ -105,7 +105,7 @@ updated: 2026-11-27
 | `today/`      | `Today.tsx`、`SleepDialog.tsx`、`TodayCategorySummary.tsx`、`today.css`                            | `AppApi`、模块公开查询/格式化、`shared/ui`           |
 | `history/`    | `History.tsx`、`HistoryWeekPanel.tsx`、`HistoryMonthPanel.tsx`、`HistoryCharts.tsx`、`history.css` | `AppApi`、`analytics`、`shared/ui`                   |
 | `statistics/` | `Stats.tsx`、`CategoryStatsPanel.tsx`、`CategoryManager.tsx`、`statistics.css`                     | `AppApi`、`analytics`、`classification`、`shared/ui` |
-| `settings/`   | `Settings.tsx`、`Export.tsx`、`PeriodExport.tsx`、`CycleSummary.tsx`、`settings.css`               | `AppApi`、`application` 的恢复/冲突类型              |
+| `settings/`   | `Settings.tsx`、`Export.tsx`（统一入口）、`CycleSummary.tsx`、`settings.css`                       | `AppApi`、`application` 的恢复/冲突类型              |
 
 UI 不直接调用文件、计时、存储插件；所有写入走 `AppApi` 操作。显示格式化可以来自模块公开函数，但不在 UI 重新实现业务规则。
 

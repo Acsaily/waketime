@@ -37,6 +37,6 @@
 ### Task 3: Settings range UI and integration
 
 - [x] Add browser tests for date fields, preset fill/edit, preview and actual JSON/TXT downloads, no data, invalid range, PDF platform message and narrow layout.
-- [x] Add `PeriodExport` panel to `ExportPanel`, use shared busy/status/error controls, existing summary styling and native date inputs. Keep old selectors and buttons.
+- [x] Consolidate into `ExportPanel` with one date range, conditional single-day exact cycle picker, preview and format group. Move backup to `Settings` data section, share existing busy lock; reuse existing single-cycle export with optional preview instant.
 - [x] Verify screenshots and downloads, run full strict gate, independent branch review, address review findings and update outcome/status.
 - Publish stacked PR after final gate; no merge.

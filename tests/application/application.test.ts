@@ -1112,6 +1112,35 @@ describe('application coordination without React', () => {
     expect(f.sharedFiles).toHaveLength(count);
   });
 
+  it('preserves single-cycle payloads and full-history trend at the preview instant', async () => {
+    const f = fixture({ initial: historyData() });
+    await f.app.initialize();
+    const data = f.app.getSnapshot().data;
+    const selected = records(f.app);
+    f.setTime(now + H);
+    await f.app.exportRecords('txt', base, now);
+    await f.app.exportRecords('json', base, now);
+    await f.app.exportRecords('pdf', base, now);
+    expect(f.sharedFiles).toEqual([
+      {
+        name: `waketime-${base}.txt`,
+        text: buildDayTxt(selected, data.cycles, data.settings.categories, () => now),
+      },
+      {
+        name: `waketime-${base}.json`,
+        text: buildBackupJson([selected], data.settings, () => now),
+      },
+    ]);
+    expect(JSON.parse(f.sharedFiles[1].text).cycleSummaries[0].awakeMs).toBe(4 * H);
+    expect(f.pdfRequests).toEqual([
+      {
+        filename: `waketime-${base}.pdf`,
+        blocks: buildPdfBlocks(selected, data.cycles, data.settings.categories, () => now),
+        share: true,
+      },
+    ]);
+  });
+
   it('exports through injected file capability without refreshing or writing records', async () => {
     const f = fixture();
     await f.app.initialize();
